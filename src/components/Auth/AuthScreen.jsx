@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { CheckSquare } from 'lucide-react';
+import { CheckSquare, Mail, Lock, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import './Auth.css';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -41,91 +42,76 @@ export default function AuthScreen() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'var(--space-4)',
-      backgroundColor: 'var(--bg-primary)'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '400px',
-        backgroundColor: 'var(--bg-secondary)',
-        border: '1px solid var(--border-glass)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-8)',
-        boxShadow: 'var(--shadow-lg)'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 'var(--space-3)',
-          marginBottom: 'var(--space-8)'
-        }}>
-          <div style={{
-            background: 'var(--accent-1)',
-            padding: 'var(--space-2)',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex'
-          }}>
-            <CheckSquare size={24} color="var(--accent-1)" />
-          </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>StudyTrack</h1>
-        </div>
-
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 'var(--space-6)', textAlign: 'center' }}>
-          {isLogin ? 'Welcome back' : 'Create an account'}
-        </h2>
-
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <div className="form-group">
-            <label className="form-label" htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              className="form-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              minLength={6}
-            />
+    <div className="auth-wrapper">
+      <div className="auth-background-mesh"></div>
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-logo">
+              <CheckSquare size={32} className="auth-logo-icon" />
+            </div>
+            <h1 className="auth-title">TaskTrack</h1>
+            <p className="auth-subtitle">
+              {isLogin ? 'Welcome back' : 'Start your journey'}
+            </p>
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={loading}
-            style={{ marginTop: 'var(--space-2)', width: '100%', justifyContent: 'center' }}
-          >
-            {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
-          </button>
-        </form>
+          <form onSubmit={handleAuth} className="auth-form">
+            <div className="form-group auth-input-group">
+              <label className="form-label" htmlFor="email">Email</label>
+              <div className="input-with-icon">
+                <input
+                  id="email"
+                  type="email"
+                  className="form-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+                <Mail size={20} className="input-icon" />
+              </div>
+            </div>
+            
+            <div className="form-group auth-input-group">
+              <label className="form-label" htmlFor="password">Password</label>
+              <div className="input-with-icon">
+                <input
+                  id="password"
+                  type="password"
+                  className="form-input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                />
+                <Lock size={20} className="input-icon" />
+              </div>
+            </div>
 
-        <div style={{ marginTop: 'var(--space-6)', textAlign: 'center' }}>
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="btn btn-ghost"
-            style={{ fontSize: '0.875rem' }}
-          >
-            {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-          </button>
+            <button
+              type="submit"
+              className="btn btn-primary auth-submit-btn"
+              disabled={loading}
+            >
+              <span>{loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}</span>
+              {!loading && <ArrowRight size={20} />}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p className="auth-switch-text">
+              {isLogin ? "Don't have an account?" : "Already have an account?"}
+            </p>
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              type="button"
+              className="btn btn-ghost auth-switch-btn"
+            >
+              {isLogin ? "Sign up now" : "Sign in instead"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
