@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ClipboardList, CheckCircle, Calendar, Flame, Plus, TrendingUp } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import StatCard from './StatCard';
 import StreakDisplay from './StreakDisplay';
 import TaskCard from '../Tasks/TaskCard';
@@ -12,6 +13,7 @@ import TaskForm from '../Tasks/TaskForm';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
+  const { displayName } = useAuth();
   const [stats, setStats] = useState(null);
   const [recentTasks, setRecentTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="fade-in" style={{ position: 'relative', zIndex: 1 }}>
+    <div className="dashboard-page fade-in" style={{ position: 'relative', zIndex: 1 }}>
       <div className="dashboard-3d-bg"></div>
 
       {/* Welcome */}
@@ -83,7 +85,7 @@ export default function Dashboard() {
           👋
         </div>
         <div className="header-text-container">
-          <h2>Welcome back!</h2>
+          <h2>Welcome back{displayName ? `, ${displayName}` : ''}!</h2>
           <p>Here's an overview of your study progress.</p>
         </div>
       </div>
@@ -134,11 +136,11 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Tasks */}
-      <div>
+      <div className="dashboard-recent-section">
         <div className="section-header">
           <h3>Recent Tasks</h3>
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-sm dashboard-recent-add-btn"
             onClick={() => setShowForm(true)}
             id="dashboard-add-task-btn"
           >

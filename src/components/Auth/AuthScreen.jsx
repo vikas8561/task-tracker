@@ -48,7 +48,7 @@ export default function AuthScreen() {
         <div className="auth-card">
           <div className="auth-header">
             <div className="auth-logo">
-              <CheckSquare size={32} className="auth-logo-icon" />
+              <CheckSquare className="auth-logo-icon" aria-hidden="true" />
             </div>
             <h1 className="auth-title">Taskabelle</h1>
             <p className="auth-subtitle">
@@ -62,14 +62,20 @@ export default function AuthScreen() {
               <div className="input-with-icon">
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="form-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
                 />
-                <Mail size={20} className="input-icon" />
+                <Mail size={20} className="input-icon" aria-hidden="true" />
               </div>
             </div>
             
@@ -78,7 +84,9 @@ export default function AuthScreen() {
               <div className="input-with-icon">
                 <input
                   id="password"
+                  name="password"
                   type="password"
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
                   className="form-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -86,7 +94,7 @@ export default function AuthScreen() {
                   required
                   minLength={6}
                 />
-                <Lock size={20} className="input-icon" />
+                <Lock size={20} className="input-icon" aria-hidden="true" />
               </div>
             </div>
 
@@ -96,7 +104,7 @@ export default function AuthScreen() {
               disabled={loading}
             >
               <span>{loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}</span>
-              {!loading && <ArrowRight size={20} />}
+              {!loading && <ArrowRight size={20} aria-hidden="true" />}
             </button>
           </form>
 

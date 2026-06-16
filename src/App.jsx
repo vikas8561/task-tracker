@@ -9,13 +9,14 @@ import RevisionView from './components/Revision/RevisionView';
 import MarkdownImport from './components/Tasks/MarkdownImport';
 import TaskForm from './components/Tasks/TaskForm';
 import AuthScreen from './components/Auth/AuthScreen';
+import NamePromptCard from './components/Auth/NamePromptCard';
 import NotesView from './components/Notes/NotesView';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
 function PrivateApp() {
-  const { user, loading } = useAuth();
+  const { user, loading, needsDisplayName, saveDisplayName } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -31,6 +32,7 @@ function PrivateApp() {
 
   return (
     <AppProvider>
+      {needsDisplayName && <NamePromptCard onSave={saveDisplayName} />}
       <Layout
         onAddTask={() => setShowTaskForm(true)}
         onImportClick={() => setShowImport(true)}

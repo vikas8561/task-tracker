@@ -31,14 +31,6 @@ export default function TopNav({
       <header className={`top-nav${isTasksPage ? ' top-nav--tasks' : ''}`}>
         <div className="top-nav-inner">
           <div className="top-nav-logo">
-            <button
-              className="btn btn-ghost btn-icon mobile-only top-nav-menu-btn"
-              onClick={onMenuToggle}
-              aria-label="Toggle menu"
-              id="topnav-menu-toggle"
-            >
-              <Menu size={20} />
-            </button>
             <div className="top-nav-logo-icon">
               <Zap size={18} color="#ffffff" />
             </div>
@@ -93,8 +85,16 @@ export default function TopNav({
               </div>
             )}
             <button
+              className="btn btn-ghost btn-icon mobile-only top-nav-menu-btn"
+              onClick={onMenuToggle}
+              aria-label="Toggle menu"
+              id="topnav-menu-toggle"
+            >
+              <Menu size={20} />
+            </button>
+            <button
               onClick={handleLogout}
-              className="btn btn-ghost top-nav-logout-btn"
+              className="btn btn-ghost top-nav-logout-btn desktop-only"
               title="Sign Out"
               aria-label="Sign Out"
             >
