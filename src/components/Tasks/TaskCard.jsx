@@ -1,6 +1,7 @@
 import { Check, Edit2, Trash2, BookMarked, Calendar, ChevronRight } from 'lucide-react';
 import Badge from '../common/Badge';
 import { toggleComplete, toggleRevision } from '../../hooks/useTasks';
+import { normalizeSubjectColor } from '../../utils/subjectColor';
 import toast from 'react-hot-toast';
 
 function formatDate(dateStr) {
@@ -37,7 +38,10 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
 
   const overdue = isOverdue(task.due_date) && !task.is_completed;
   
-  const subColor = task.subjects?.color || 'var(--accent-1)';
+  const subColor = normalizeSubjectColor(
+    task.subjects?.color,
+    task.subjects?.id || task.subjects?.name
+  );
 
   return (
     <div 

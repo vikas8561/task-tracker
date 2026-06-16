@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, TrendingUp, BookMarked, Zap, LogOut, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, TrendingUp, BookMarked, Zap, LogOut, FileText, Search, Plus, Menu } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const navItems = [
@@ -10,8 +10,17 @@ const navItems = [
   { to: '/notes', icon: FileText, label: 'Notes', id: 'nav-notes' },
 ];
 
-export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollapse }) {
+export default function TopNav({
+  mobileOpen,
+  onClose,
+  onMenuToggle,
+  onAddTask,
+  onImportClick,
+  searchQuery,
+  onSearchChange,
+}) {
   const location = useLocation();
+  const isTasksPage = location.pathname === '/tasks';
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -19,61 +28,139 @@ export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollap
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`}>
-        {/* Logo row + collapse toggle */}
+      <header className={`top-nav${isTasksPage ? ' top-nav--tasks' : ''}`}>
+        <div className="top-nav-inner">
+          <div className="top-nav-logo">
+            <button
+              className="btn btn-ghost btn-icon mobile-only top-nav-menu-btn"
+              onClick={onMenuToggle}
+              aria-label="Toggle menu"
+              id="topnav-menu-toggle"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="top-nav-logo-icon">
+              <Zap size={18} color="#ffffff" />
+            </div>
+            <span className="top-nav-logo-text text-gradient">Taskabelle</span>
+          </div>
+
+          <nav className="top-nav-links" aria-label="Main navigation">
+            {navItems.map(({ to, icon: Icon, label, id }) => (
+              <NavLink
+                key={to}
+                to={to}
+                id={id}
+                className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}
+                end={to === '/'}
+                onClick={onClose}
+              >
+                <Icon size={20} className="top-nav-link-icon" />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="top-nav-actions">
+            {isTasksPage && (
+              <div className="top-nav-task-tools">
+                <div className="top-nav-search">
+                  <Search size={15} className="top-nav-search-icon" />
+                  <input
+                    type="search"
+                    placeholder="Search tasks..."
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    aria-label="Search tasks"
+                    id="topnav-search-input"
+                  />
+                </div>
+                <button
+                  className="btn btn-secondary top-nav-import-btn"
+                  onClick={onImportClick}
+                  id="topnav-import-md-btn"
+                >
+                  Import MD
+                </button>
+                <button
+                  className="btn btn-primary top-nav-add-btn"
+                  onClick={onAddTask}
+                  id="topnav-add-task-btn"
+                >
+                  <Plus size={16} />
+                  <span className="top-nav-add-label">New Task</span>
+                </button>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className="btn btn-ghost top-nav-logout-btn"
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile drawer */}
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">
-            <Zap size={18} color="var(--accent-1)" />
+            <Zap size={18} color="#ffffff" />
           </div>
-          {!collapsed && <span className="sidebar-logo-text">Taskabelle</span>}
-
-          {/* Collapse toggle button — desktop only */}
-          <button
-            className="sidebar-collapse-btn"
-            onClick={onToggleCollapse}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            id="sidebar-collapse-btn"
-          >
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
+          <span className="sidebar-logo-text">Taskabelle</span>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Main navigation">
-          {!collapsed && <span className="nav-section-label">Menu</span>}
+        <nav className="sidebar-nav" aria-label="Mobile navigation">
           {navItems.map(({ to, icon: Icon, label, id }) => (
             <NavLink
               key={to}
               to={to}
-              id={id}
+              id={`mobile-${id}`}
               className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
               end={to === '/'}
               onClick={onClose}
-              title={collapsed ? label : undefined}
             >
               <Icon size={18} className="nav-link-icon" />
-              {!collapsed && <span>{label}</span>}
+              <span>{label}</span>
             </NavLink>
           ))}
         </nav>
 
+        {isTasksPage && (
+          <div className="sidebar-task-tools">
+            <div className="top-nav-search sidebar-search">
+              <Search size={15} className="top-nav-search-icon" />
+              <input
+                type="search"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                aria-label="Search tasks"
+              />
+            </div>
+            <button className="btn btn-secondary w-full" onClick={() => { onImportClick(); onClose(); }}>
+              Import MD
+            </button>
+            <button className="btn btn-primary w-full" onClick={() => { onAddTask(); onClose(); }}>
+              <Plus size={16} /> New Task
+            </button>
+          </div>
+        )}
+
         <div className="sidebar-footer">
-          <button
-            onClick={handleLogout}
-            className="btn btn-ghost sidebar-logout-btn"
-            title={collapsed ? 'Sign Out' : undefined}
-          >
+          <button onClick={handleLogout} className="btn btn-ghost sidebar-logout-btn">
             <LogOut size={16} />
-            {!collapsed && <span style={{ marginLeft: 'var(--space-2)' }}>Sign Out</span>}
+            <span style={{ marginLeft: 'var(--space-2)' }}>Sign Out</span>
           </button>
         </div>
       </aside>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 99, backdropFilter: 'blur(2px)' }}
+          className="sidebar-overlay"
           onClick={onClose}
         />
       )}

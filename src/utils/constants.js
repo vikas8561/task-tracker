@@ -3,7 +3,7 @@ export const PRIORITY_LEVELS = ['high', 'medium', 'low'];
 export const PRIORITY_COLORS = {
   high: '#ef4444',
   medium: '#f59e0b',
-  low: '#06b6d4',
+  low: '#ff8a00',
 };
 
 export const PRIORITY_LABELS = {
@@ -13,16 +13,16 @@ export const PRIORITY_LABELS = {
 };
 
 export const SUBJECT_COLORS = [
-  '#6366f1', // Indigo
-  '#8b5cf6', // Violet
-  '#06b6d4', // Cyan
-  '#10b981', // Emerald
-  '#f59e0b', // Amber
-  '#ef4444', // Red
-  '#ec4899', // Pink
-  '#14b8a6', // Teal
-  '#f97316', // Orange
-  '#84cc16', // Lime
+  '#ff8a00',
+  '#da1b60',
+  '#ff6b35',
+  '#ff9f43',
+  '#f59e0b',
+  '#ef4444',
+  '#ec4899',
+  '#e85d75',
+  '#f97316',
+  '#f43f5e',
 ];
 
 export const TODAY = () => {

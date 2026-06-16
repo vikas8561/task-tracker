@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { calculateStreak } from '../utils/streakCalculator';
+import { normalizeSubjectColor } from '../utils/subjectColor';
 
 
 // Safe query wrapper — returns fallback value instead of throwing on DB errors
@@ -50,7 +51,7 @@ export async function fetchProgressBySubject() {
       subjectMap[sid] = {
         id: sid,
         name: task.subjects?.name,
-        color: task.subjects?.color,
+        color: normalizeSubjectColor(task.subjects?.color, sid),
         total: 0,
         completed: 0,
       };
@@ -80,7 +81,7 @@ export async function fetchProgressByChapter() {
         name: task.chapters?.name,
         subjectId: task.subject_id,
         subjectName: task.subjects?.name,
-        subjectColor: task.subjects?.color,
+        subjectColor: normalizeSubjectColor(task.subjects?.color, task.subject_id),
         total: 0,
         completed: 0,
       };
@@ -101,5 +102,13 @@ export async function fetchRecentTasks(limit = 5) {
     .select(`*, subjects(id, name, color), chapters(id, name), topics(id, name)`)
     .order('created_at', { ascending: false })
     .limit(limit);
-  return data || [];
+  return (data || []).map((task) => ({
+    ...task,
+    subjects: task.subjects
+      ? {
+          ...task.subjects,
+          color: normalizeSubjectColor(task.subjects.color, task.subjects.id),
+        }
+      : null,
+  }));
 }

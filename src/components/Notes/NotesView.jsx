@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Plus, FilePlus2, Eye, Edit3, Columns, GitBranch,
-  ChevronLeft, ChevronRight, FileText, Folder, Search, X, Archive, FolderPlus, Trash2
+  FileText, Folder, Search, X, Archive, FolderPlus, Trash2, PanelRightOpen, PanelRightClose
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -93,15 +93,6 @@ export default function NotesView() {
       return next;
     });
   };
-
-  // Sync nav panel width to global CSS variable for header/layout coordination
-  useEffect(() => {
-    const width = navCollapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)';
-    document.documentElement.style.setProperty('--notes-panel-width', width);
-    return () => {
-      document.documentElement.style.removeProperty('--notes-panel-width');
-    };
-  }, [navCollapsed]);
 
   // Derived
   const debouncedContent = useDebounce(editorContent, 800);
@@ -285,10 +276,18 @@ export default function NotesView() {
 
   return (
     <div className="notes-view">
-
-
-      {/* ── Main editor area ─────────────────────────────────────────────── */}
-      <div className="notes-main">
+      <div className={`notes-shell${navCollapsed ? ' notes-shell-collapsed' : ''}`}>
+        {/* ── Editor area ── */}
+        <div className="notes-main">
+        <button
+          type="button"
+          className="notes-mobile-sidebar-btn mobile-only"
+          onClick={toggleNavCollapse}
+          aria-label="Toggle notes sidebar"
+          title="Toggle sidebar"
+        >
+          <PanelRightOpen size={18} />
+        </button>
         {/* Topbar */}
         <div className="notes-editor-topbar">
           {activeNote ? (
@@ -403,133 +402,143 @@ export default function NotesView() {
             />
           </div>
         )}
-      </div>
-
-      {/* ── Notes nav panel (Right sidebar, same design as app sidebar) ── */}
-      <aside className={`notes-nav-panel ${navCollapsed ? 'notes-nav-collapsed' : ''}`}>
-
-        {/* Header: search input (expanded) or icon (collapsed) */}
-        <div className="notes-nav-logo">
-          {navCollapsed ? (
-            <>
-              <div className="notes-nav-logo-icon">
-                <FileText size={15} color="var(--accent-1)" />
-              </div>
-              <button
-                className="notes-nav-collapse-btn"
-                onClick={toggleNavCollapse}
-                title="Expand notes panel"
-              >
-                <ChevronLeft size={14} />
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="notes-nav-header-search">
-                <Search size={13} className="notes-nav-search-icon" />
-                <input
-                  ref={sidebarSearchRef}
-                  className="notes-nav-search-input"
-                  placeholder="Search notes..."
-                  value={sidebarSearch}
-                  onChange={(e) => setSidebarSearch(e.target.value)}
-                  id="notes-sidebar-search"
-                />
-                {sidebarSearch && (
-                  <button className="notes-nav-search-clear" onClick={() => setSidebarSearch('')}>
-                    <X size={11} />
-                  </button>
-                )}
-              </div>
-              <button
-                className="notes-nav-collapse-btn"
-                onClick={toggleNavCollapse}
-                title="Collapse notes panel"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </>
-          )}
         </div>
 
-        {/* Collapsed icon strip */}
-        {navCollapsed ? (
-          <div className="notes-nav-icon-strip">
-            <button
-              className="notes-nav-icon-btn"
-              onClick={() => handleCreateNote(null)}
-              title="New note"
-            >
-              <Plus size={17} />
-            </button>
-            <button
-              className={`notes-nav-icon-btn ${selectedFolderId === null ? 'active' : ''}`}
-              onClick={() => setSelectedFolderId(null)}
-              title="All Notes"
-            >
-              <FileText size={17} />
-            </button>
-            {folders.map((f) => (
-              <button
-                key={f.id}
-                className={`notes-nav-icon-btn ${selectedFolderId === f.id ? 'active' : ''}`}
-                onClick={() => setSelectedFolderId(f.id)}
-                title={f.name}
-              >
-                <Folder size={17} />
-              </button>
-            ))}
-          </div>
-        ) : (
-          /* Full expanded content */
-          <div className="notes-nav-body">
-            {/* Icon action toolbar */}
-            <div className="notes-nav-actions">
-              <button
-                className="notes-nav-action-btn"
-                onClick={() => handleCreateNote(null)}
-                title="New note"
-                id="notes-new-btn"
-              >
-                <FilePlus2 size={18} />
-              </button>
-              <button
-                className="notes-nav-action-btn"
-                onClick={() => handleCreateFolder(null)}
-                title="New folder"
-              >
-                <FolderPlus size={18} />
-              </button>
-              <button
-                className={`notes-nav-action-btn ${showArchivedOnly ? 'active' : ''}`}
-                onClick={() => setShowArchivedOnly((v) => !v)}
-                title={showArchivedOnly ? 'Show all notes' : 'Show archived'}
-              >
-                <Archive size={18} />
-              </button>
-            </div>
-
-            {/* Folder tree — notes inside folders are clickable */}
-            <FolderTree
-              folders={folders}
-              notes={showArchivedOnly ? notes.filter((n) => n.is_archived) : notes.filter((n) => !n.is_archived)}
-              selectedFolderId={selectedFolderId}
-              selectedSlug={activeNote?.slug}
-              onSelectFolder={setSelectedFolderId}
-              onSelectNote={handleSelectNote}
-              onSelectAll={() => setSelectedFolderId(null)}
-              onCreateFolder={handleCreateFolder}
-              onRenameFolder={handleRenameFolder}
-              onDeleteFolder={handleDeleteFolder}
-              onCreateNote={handleCreateNote}
-              onRenameNote={handleRenameNote}
-              onDeleteNote={handleDeleteNote}
-              onTogglePin={handleTogglePin}
-              onToggleArchive={handleToggleArchive}
-            />
-          </div>
+        {!navCollapsed && (
+          <div
+            className="notes-sidebar-backdrop mobile-only"
+            onClick={toggleNavCollapse}
+            aria-hidden="true"
+          />
         )}
-      </aside>
+
+        {/* ── Sidebar (merged into shell) ── */}
+        <aside className={`notes-nav-panel ${navCollapsed ? 'notes-nav-collapsed' : ''}`}>
+          <div className="notes-nav-header">
+            {!navCollapsed ? (
+              <div className="notes-nav-header-row">
+                <button
+                  className="notes-nav-collapse-btn"
+                  onClick={toggleNavCollapse}
+                  title="Hide sidebar"
+                  aria-label="Hide sidebar"
+                  id="notes-nav-collapse-btn"
+                >
+                  <PanelRightClose size={18} />
+                </button>
+                <div className="notes-nav-header-search">
+                  <Search size={16} className="notes-nav-search-icon" />
+                  <input
+                    ref={sidebarSearchRef}
+                    className="notes-nav-search-input"
+                    placeholder="Search notes..."
+                    value={sidebarSearch}
+                    onChange={(e) => setSidebarSearch(e.target.value)}
+                    id="notes-sidebar-search"
+                  />
+                  {sidebarSearch && (
+                    <button
+                      className="notes-nav-search-clear"
+                      onClick={() => setSidebarSearch('')}
+                      aria-label="Clear search"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <button
+                className="notes-nav-collapse-btn notes-nav-collapse-btn--expand"
+                onClick={toggleNavCollapse}
+                title="Show sidebar"
+                aria-label="Show sidebar"
+                id="notes-nav-collapse-btn"
+              >
+                <PanelRightOpen size={18} />
+              </button>
+            )}
+          </div>
+
+          {navCollapsed ? (
+            <div className="notes-nav-scroll notes-nav-scroll--collapsed">
+              <div className="notes-nav-icon-strip">
+                <button
+                  className="notes-nav-icon-btn"
+                  onClick={() => handleCreateNote(null)}
+                  title="New note"
+                >
+                  <Plus size={17} />
+                </button>
+                <button
+                  className={`notes-nav-icon-btn ${selectedFolderId === null ? 'active' : ''}`}
+                  onClick={() => setSelectedFolderId(null)}
+                  title="All Notes"
+                >
+                  <FileText size={17} />
+                </button>
+                {folders.map((f) => (
+                  <button
+                    key={f.id}
+                    className={`notes-nav-icon-btn ${selectedFolderId === f.id ? 'active' : ''}`}
+                    onClick={() => setSelectedFolderId(f.id)}
+                    title={f.name}
+                  >
+                    <Folder size={17} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="notes-nav-body">
+              <div className="notes-nav-actions">
+                <button
+                  className="notes-nav-action-btn"
+                  onClick={() => handleCreateNote(null)}
+                  title="New note"
+                  id="notes-new-btn"
+                >
+                  <FilePlus2 size={18} />
+                </button>
+                <button
+                  className="notes-nav-action-btn"
+                  onClick={() => handleCreateFolder(null)}
+                  title="New folder"
+                >
+                  <FolderPlus size={18} />
+                </button>
+                <button
+                  className={`notes-nav-action-btn ${showArchivedOnly ? 'active' : ''}`}
+                  onClick={() => setShowArchivedOnly((v) => !v)}
+                  title={showArchivedOnly ? 'Show all notes' : 'Show archived'}
+                >
+                  <Archive size={18} />
+                </button>
+              </div>
+
+              <div className="notes-nav-scroll">
+                <FolderTree
+                  folders={folders}
+                  notes={showArchivedOnly ? notes.filter((n) => n.is_archived) : notes.filter((n) => !n.is_archived)}
+                  selectedFolderId={selectedFolderId}
+                  selectedSlug={activeNote?.slug}
+                  onSelectFolder={setSelectedFolderId}
+                  onSelectNote={handleSelectNote}
+                  onSelectAll={() => setSelectedFolderId(null)}
+                  onCreateFolder={handleCreateFolder}
+                  onRenameFolder={handleRenameFolder}
+                  onDeleteFolder={handleDeleteFolder}
+                  onCreateNote={handleCreateNote}
+                  onRenameNote={handleRenameNote}
+                  onDeleteNote={handleDeleteNote}
+                  onTogglePin={handleTogglePin}
+                  onToggleArchive={handleToggleArchive}
+                />
+              </div>
+            </div>
+          )}
+        </aside>
+      </div>
 
       {/* Custom Confirm Dialog */}
       {confirmDialog && (

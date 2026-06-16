@@ -8,7 +8,7 @@ import { fetchSubjects } from '../../hooks/useSubjects';
 import { BookMarked } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function RevisionView({ searchQuery }) {
+export default function RevisionView() {
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,11 +38,6 @@ export default function RevisionView({ searchQuery }) {
     if (subjectFilter !== 'all' && t.subject_id !== subjectFilter) return false;
     if (statusFilter === 'active' && t.is_completed) return false;
     if (statusFilter === 'completed' && !t.is_completed) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return t.title.toLowerCase().includes(q) ||
-        t.subjects?.name?.toLowerCase().includes(q);
-    }
     return true;
   });
 

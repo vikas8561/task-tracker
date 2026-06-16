@@ -3,7 +3,7 @@ import { ClipboardList, CheckCircle, Calendar, Flame, Plus, TrendingUp } from 'l
 import StatCard from './StatCard';
 import StreakDisplay from './StreakDisplay';
 import TaskCard from '../Tasks/TaskCard';
-import ProgressBar from '../common/ProgressBar';
+import CircularProgress from '../common/CircularProgress';
 import EmptyState from '../common/EmptyState';
 import { fetchDashboardStats, fetchRecentTasks } from '../../hooks/useDashboard';
 import { toggleComplete, toggleRevision, deleteTask } from '../../hooks/useTasks';
@@ -73,7 +73,8 @@ export default function Dashboard() {
   return (
     <div className="fade-in" style={{ position: 'relative', zIndex: 1 }}>
       <div className="dashboard-3d-bg"></div>
-      {/* Page Header */}
+
+      {/* Welcome */}
       <div className="page-header-banner slide-down">
         <div className="header-icon-badge emoji-badge" style={{
           background: 'var(--accent-grad-soft)',
@@ -87,49 +88,49 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Overall Progress */}
-      <div className="card-3d card-3d-glowing overall-progress-card slide-up">
-        <div className="overall-progress-content">
-          <div className="overall-progress-header">
-            <div>
-              <h3 style={{ color: 'var(--text-primary)', marginBottom: '4px' }}>Overall Progress</h3>
-              <p style={{ fontSize: '0.8rem' }}>
-                {stats?.completedTasks ?? 0} of {stats?.totalTasks ?? 0} tasks completed
-              </p>
+      {/* Overall Progress + Stats Grid */}
+      <div className="dashboard-grid slide-up">
+        <div className="dashboard-grid-main">
+          <div className="card-3d card-3d-glowing overall-progress-card">
+            <div className="overall-progress-layout">
+              <CircularProgress value={stats?.overallProgress ?? 0} />
+              <div className="overall-progress-info">
+                <h3>Overall Progress</h3>
+                <p>
+                  {stats?.completedTasks ?? 0} of {stats?.totalTasks ?? 0} tasks completed
+                </p>
+              </div>
             </div>
-            <span className="overall-percent">{stats?.overallProgress ?? 0}%</span>
           </div>
-          <ProgressBar value={stats?.overallProgress ?? 0} size="lg" />
         </div>
-      </div>
 
-      {/* Stat Cards */}
-      <div className="stat-grid" style={{ marginBottom: 'var(--space-6)' }}>
-        <StatCard
-          icon={ClipboardList}
-          label="Total Tasks"
-          value={stats?.totalTasks ?? 0}
-          color="var(--accent-1)"
-          delay="stagger-1"
-        />
-        <StatCard
-          icon={CheckCircle}
-          label="Completed"
-          value={stats?.completedTasks ?? 0}
-          color="var(--success)"
-          delay="stagger-2"
-        />
-        <StatCard
-          icon={Calendar}
-          label="Due Today"
-          value={stats?.todaysTasks ?? 0}
-          color="var(--warning)"
-          delay="stagger-3"
-        />
-        <StreakDisplay
-          streak={stats?.streak ?? 0}
-          completedTimestamps={stats?.completedTimestamps ?? []}
-        />
+        <div className="dashboard-grid-stats">
+          <StatCard
+            icon={ClipboardList}
+            label="Total Tasks"
+            value={stats?.totalTasks ?? 0}
+            color="var(--accent-1)"
+            delay="stagger-1"
+          />
+          <StatCard
+            icon={CheckCircle}
+            label="Completed"
+            value={stats?.completedTasks ?? 0}
+            color="var(--accent-2)"
+            delay="stagger-2"
+          />
+          <StatCard
+            icon={Calendar}
+            label="Due Today"
+            value={stats?.todaysTasks ?? 0}
+            color="var(--warning)"
+            delay="stagger-3"
+          />
+          <StreakDisplay
+            streak={stats?.streak ?? 0}
+            completedTimestamps={stats?.completedTimestamps ?? []}
+          />
+        </div>
       </div>
 
       {/* Recent Tasks */}

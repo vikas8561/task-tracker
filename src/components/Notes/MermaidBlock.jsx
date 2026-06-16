@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { themeMermaidSvg, makeSvgResponsive } from '../../utils/svgTheme';
 
 let mermaidLoaded = false;
 let mermaidLib = null;
@@ -11,20 +12,34 @@ async function loadMermaid() {
     startOnLoad: false,
     theme: 'dark',
     themeVariables: {
-      primaryColor: '#181a36',
-      primaryTextColor: '#f8f9fa',
-      primaryBorderColor: '#ff3366',
+      primaryColor: '#2a2d33',
+      primaryTextColor: '#f5f5f7',
+      primaryBorderColor: '#ff8a00',
       lineColor: '#ffaa00',
-      secondaryColor: '#111226',
-      tertiaryColor: '#080914',
+      secondaryColor: '#22252a',
+      tertiaryColor: '#1a1c20',
       fontFamily: 'Inter, sans-serif',
       fontSize: '14px',
       clusterBkg: 'transparent',
       clusterBorder: '#ffaa00',
-      titleColor: '#ff3366',
-      edgeLabelBackground: '#111226',
+      titleColor: '#da1b60',
+      edgeLabelBackground: '#22252a',
+      xyChart: {
+        backgroundColor: '#1e2126',
+        titleColor: '#f5f5f7',
+        xAxisLabelColor: '#a8adb5',
+        xAxisTitleColor: '#d1d5db',
+        xAxisTickColor: '#6b7280',
+        xAxisLineColor: '#6b7280',
+        yAxisLabelColor: '#a8adb5',
+        yAxisTitleColor: '#d1d5db',
+        yAxisTickColor: '#6b7280',
+        yAxisLineColor: '#6b7280',
+        plotColorPalette: '#ff8a00, #da1b60, #ff9f43, #f43f5e',
+      },
     },
     flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+    mindmap: { useMaxWidth: true },
     securityLevel: 'loose',
   });
   mermaidLoaded = true;
@@ -50,7 +65,7 @@ export default function MermaidBlock({ code }) {
         const id = `mermaid-${++renderCount}`;
         const { svg: rendered } = await mermaid.render(id, code.trim());
         if (!cancelled) {
-          setSvg(rendered);
+          setSvg(makeSvgResponsive(themeMermaidSvg(rendered)));
           setLoading(false);
         }
       } catch (err) {

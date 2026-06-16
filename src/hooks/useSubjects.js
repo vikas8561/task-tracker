@@ -10,7 +10,7 @@ export async function fetchSubjects() {
   return data;
 }
 
-export async function createSubject(name, color = '#0f766e') {
+export async function createSubject(name, color = '#ff8a00') {
   const { data, error } = await supabase
     .from('subjects')
     .insert([{ name, color }])
@@ -40,7 +40,7 @@ export async function deleteSubject(id) {
   if (error) throw error;
 }
 
-export async function getOrCreateSubject(name, color = '#0f766e') {
+export async function getOrCreateSubject(name, color = '#ff8a00') {
   // Try to find existing
   const { data: existing } = await supabase
     .from('subjects')

@@ -2,21 +2,21 @@ import React, { useState } from 'react';
 
 const CALLOUT_TYPES = {
   note: { icon: '📝', color: '#ffaa00', bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.3)', label: 'Note' },
-  info: { icon: 'ℹ️', color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.3)', label: 'Info' },
-  tip: { icon: '💡', color: '#00e5a0', bg: 'rgba(0,229,160,0.08)', border: 'rgba(0,229,160,0.3)', label: 'Tip' },
-  success: { icon: '✅', color: '#00e5a0', bg: 'rgba(0,229,160,0.08)', border: 'rgba(0,229,160,0.3)', label: 'Success' },
+  info: { icon: 'ℹ️', color: '#e85d75', bg: 'rgba(232,93,117,0.08)', border: 'rgba(232,93,117,0.3)', label: 'Info' },
+  tip: { icon: '💡', color: '#ff9f43', bg: 'rgba(255,159,67,0.08)', border: 'rgba(255,159,67,0.3)', label: 'Tip' },
+  success: { icon: '✅', color: '#ff9f43', bg: 'rgba(255,159,67,0.08)', border: 'rgba(255,159,67,0.3)', label: 'Success' },
   warning: { icon: '⚠️', color: '#ffaa00', bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.3)', label: 'Warning' },
   caution: { icon: '🔥', color: '#ff6b35', bg: 'rgba(255,107,53,0.08)', border: 'rgba(255,107,53,0.3)', label: 'Caution' },
-  danger: { icon: '❌', color: '#ff3366', bg: 'rgba(255,51,102,0.08)', border: 'rgba(255,51,102,0.3)', label: 'Danger' },
-  bug: { icon: '🐛', color: '#ff3366', bg: 'rgba(255,51,102,0.08)', border: 'rgba(255,51,102,0.3)', label: 'Bug' },
-  failure: { icon: '💥', color: '#ff3366', bg: 'rgba(255,51,102,0.08)', border: 'rgba(255,51,102,0.3)', label: 'Failure' },
+  danger: { icon: '❌', color: '#da1b60', bg: 'rgba(218,27,96,0.08)', border: 'rgba(218,27,96,0.3)', label: 'Danger' },
+  bug: { icon: '🐛', color: '#da1b60', bg: 'rgba(218,27,96,0.08)', border: 'rgba(218,27,96,0.3)', label: 'Bug' },
+  failure: { icon: '💥', color: '#da1b60', bg: 'rgba(218,27,96,0.08)', border: 'rgba(218,27,96,0.3)', label: 'Failure' },
   question: { icon: '❓', color: '#ffaa00', bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.3)', label: 'Question' },
-  abstract: { icon: '📋', color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.3)', label: 'Abstract' },
-  summary: { icon: '📋', color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.3)', label: 'Summary' },
-  todo: { icon: '☑️', color: '#00e5a0', bg: 'rgba(0,229,160,0.08)', border: 'rgba(0,229,160,0.3)', label: 'Todo' },
-  example: { icon: '🧪', color: '#0891b2', bg: 'rgba(8,145,178,0.08)', border: 'rgba(8,145,178,0.3)', label: 'Example' },
+  abstract: { icon: '📋', color: '#e85d75', bg: 'rgba(232,93,117,0.08)', border: 'rgba(232,93,117,0.3)', label: 'Abstract' },
+  summary: { icon: '📋', color: '#e85d75', bg: 'rgba(232,93,117,0.08)', border: 'rgba(232,93,117,0.3)', label: 'Summary' },
+  todo: { icon: '☑️', color: '#ff9f43', bg: 'rgba(255,159,67,0.08)', border: 'rgba(255,159,67,0.3)', label: 'Todo' },
+  example: { icon: '🧪', color: '#ff8a00', bg: 'rgba(255,138,0,0.08)', border: 'rgba(255,138,0,0.3)', label: 'Example' },
   quote: { icon: '💬', color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.3)', label: 'Quote' },
-  important: { icon: '❗', color: '#ff3366', bg: 'rgba(255,51,102,0.08)', border: 'rgba(255,51,102,0.3)', label: 'Important' },
+  important: { icon: '❗', color: '#da1b60', bg: 'rgba(218,27,96,0.08)', border: 'rgba(218,27,96,0.3)', label: 'Important' },
 };
 
 /**

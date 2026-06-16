@@ -17,6 +17,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { toggleComplete, toggleRevision, reorderTasks, updateTask } from '../../hooks/useTasks';
+import { normalizeSubjectColor } from '../../utils/subjectColor';
 import Badge from '../common/Badge';
 import toast from 'react-hot-toast';
 
@@ -43,10 +44,10 @@ function groupTasks(tasks) {
   tasks.forEach((task) => {
     const sId = task.subject_id || '__none__';
     const sName = task.subjects?.name || 'Uncategorized';
-    let sColor = task.subjects?.color || 'var(--accent-1)';
-    if (sColor.includes('6366f1') || sColor.includes('3b82f6') || sColor.includes('0f74cd')) {
-      sColor = 'var(--warning)'; // Instantly remap any old blue subjects to amber gold
-    }
+    const sColor = normalizeSubjectColor(
+      task.subjects?.color || 'var(--accent-1)',
+      sId
+    );
 
     const cId = task.chapter_id || '__none__';
     const cName = task.chapters?.name || 'General';

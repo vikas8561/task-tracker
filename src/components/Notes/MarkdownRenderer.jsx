@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import MermaidBlock from './MermaidBlock';
 import CalloutBlock, { parseCallout } from './CalloutBlock';
 import NoteEmbed from './NoteEmbed';
+import { themeSvgForDark, makeSvgResponsive } from '../../utils/svgTheme';
 
 // Remark plugin to handle wiki-links: [[Title]] [[Title|Alias]] [[Title#heading]]
 function remarkWikiLinks() {
@@ -202,7 +203,9 @@ export default function MarkdownRenderer({ content = '', onLinkClick }) {
     // Use a regex to find <svg>...</svg> across multiple lines
     // We replace \n\s*\n with a single newline inside the match
     text = text.replace(/<svg[\s\S]*?<\/svg>/g, (match) => {
-      return match.replace(/\n\s*\n/g, '\n');
+      const normalized = match.replace(/\n\s*\n/g, '\n');
+      const themed = makeSvgResponsive(themeSvgForDark(normalized));
+      return `<div class="md-diagram md-diagram--dark">${themed}</div>`;
     });
     return text;
   }, [content]);

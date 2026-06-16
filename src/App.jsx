@@ -51,7 +51,7 @@ function PrivateApp() {
             }
           />
           <Route path="/progress" element={<ProgressView />} />
-          <Route path="/revision" element={<RevisionView searchQuery={searchQuery} />} />
+          <Route path="/revision" element={<RevisionView />} />
           <Route path="/notes" element={<NotesView />} />
           <Route path="/notes/:slug" element={<NotesView />} />
           <Route path="*" element={<Navigate to="/" replace />} />

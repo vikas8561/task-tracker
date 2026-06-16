@@ -2,18 +2,20 @@ import { useState, useEffect } from 'react';
 import ProgressBar from '../common/ProgressBar';
 import EmptyState from '../common/EmptyState';
 import { fetchDashboardStats, fetchProgressBySubject, fetchProgressByChapter } from '../../hooks/useDashboard';
+import { normalizeSubjectColor } from '../../utils/subjectColor';
 import { TrendingUp, ChevronDown, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function SubjectProgressCard({ subject, chapters }) {
   const [expanded, setExpanded] = useState(false);
   const subjectChapters = chapters.filter((c) => c.subjectId === subject.id);
+  const color = normalizeSubjectColor(subject.color, subject.id || subject.name);
 
   return (
     <div className="card-3d subject-progress-card slide-up">
       <div className="subject-progress-header" onClick={() => setExpanded((v) => !v)}>
         <div className="subject-name-row">
-          <div className="subject-color-bar" style={{ background: subject.color }} />
+          <div className="subject-color-bar" style={{ background: color }} />
           <div>
             <h4 style={{ color: 'var(--text-primary)' }}>{subject.name}</h4>
             <p style={{ fontSize: '0.78rem' }}>
@@ -25,7 +27,7 @@ function SubjectProgressCard({ subject, chapters }) {
           <span style={{
             fontSize: '1.4rem',
             fontWeight: 800,
-            color: subject.color
+            color
           }}>
             {subject.percentage}%
           </span>
@@ -33,7 +35,7 @@ function SubjectProgressCard({ subject, chapters }) {
         </div>
       </div>
 
-      <ProgressBar value={subject.percentage} size="md" color={subject.color} />
+      <ProgressBar value={subject.percentage} size="md" color={color} />
 
       {expanded && subjectChapters.length > 0 && (
         <div className="chapter-progress-list">

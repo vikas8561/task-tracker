@@ -15,23 +15,22 @@ async function loadForceGraph() {
 }
 
 const THEME = {
-  bg: '#0a0b14',
-  nodeCurrent: '#ffaa00', 
-  nodeNeighbor: '#ff3366', 
-  nodeDefault: '#5a6478',
-  nodeOrphan: '#181a36',
+  bg: '#1a1c20',
+  nodeCurrent: '#ffaa00',
+  nodeNeighbor: '#da1b60',
+  nodeDefault: '#6b7280',
+  nodeOrphan: '#2a2d33',
   linkDefault: 'rgba(255, 255, 255, 0.1)',
-  linkHighlight: 'rgba(255, 51, 102, 0.8)',
-  labelDefault: '#9ba3b5',
-  labelHighlight: '#f0f2f5',
+  linkHighlight: 'rgba(255, 138, 0, 0.8)',
+  labelDefault: '#a8adb5',
+  labelHighlight: '#f5f5f7',
   labelCurrent: '#ffaa00',
 };
 
-// Tag-based colors for categorization (futuristic dark)
 const TAG_PALETTE = [
-  '#ff3366', '#ffaa00', '#00e5a0', '#ff6b35',
-  '#0f766e', '#f43f5e', '#14b8a6', '#f59e0b',
-  '#ef4444', '#10b981',
+  '#ff8a00', '#da1b60', '#ff9f43', '#ff6b35',
+  '#e85d75', '#f43f5e', '#f59e0b', '#ef4444',
+  '#ec4899', '#f97316',
 ];
 
 function getTagColor(tags = []) {
@@ -259,14 +258,19 @@ export default function GraphView({ graphData, currentSlug, onClose }) {
       const padding = 3 / globalScale;
       const bgH = fontSize + padding * 2;
 
-      // Label background pill
+      // Label background pill — dark theme
       if (isHighlighted) {
-        ctx.fillStyle = 'rgba(248, 250, 252, 0.88)';
-        ctx.beginPath();
         const rx = node.x - textWidth / 2 - padding;
         const ry = node.y + size + 3 / globalScale;
-        ctx.roundRect(rx, ry, textWidth + padding * 2, bgH, 3 / globalScale);
+
+        ctx.fillStyle = 'rgba(34, 37, 42, 0.94)';
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, textWidth + padding * 2, bgH, 4 / globalScale);
         ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 138, 0, 0.18)';
+        ctx.lineWidth = 1 / globalScale;
+        ctx.stroke();
       }
 
       ctx.fillStyle = isCurrent ? THEME.labelCurrent : isHighlighted ? THEME.labelHighlight : THEME.labelDefault;
@@ -278,7 +282,7 @@ export default function GraphView({ graphData, currentSlug, onClose }) {
   const linkColor = useCallback((link) => {
     if (highlightLinks.size === 0 && highlightNodes.size === 0) return THEME.linkDefault;
     if (highlightLinks.has(link)) return THEME.linkHighlight;
-    return 'rgba(148, 163, 184, 0.1)';
+    return 'rgba(255, 138, 0, 0.06)';
   }, [highlightLinks, highlightNodes]);
 
   const linkWidth = useCallback((link) => {
