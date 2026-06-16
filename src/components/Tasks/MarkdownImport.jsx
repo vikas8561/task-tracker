@@ -14,17 +14,16 @@ const EXAMPLE_MD = `# Subject: Physics
 
 ## Chapter: Mechanics
 ### Topic: Newton's Laws
-#### Sub-topic: First Law of Motion
-- [ ] Read about inertia and rest | priority: high | due: 2026-06-20 | revision: true
+- [ ] First Law of Motion | priority: high | due: 2026-06-20 | revision: true
 - [ ] Solve numerical problems on inertia | priority: medium
 
 ### Topic: Work, Energy & Power
-- [ ] Study kinetic energy derivation | priority: low
+- [ ] Kinetic energy derivation | priority: low
 - [ ] Solve worksheet problems
 
 ## Chapter: Thermodynamics
 ### Topic: Laws of Thermodynamics
-- [ ] Read about Zeroth Law | priority: medium | due: 2026-06-25`;
+- [ ] Zeroth Law | priority: medium | due: 2026-06-25`;
 
 export default function MarkdownImport({ isOpen, onClose, onImported }) {
   const [content, setContent] = useState('');
@@ -68,7 +67,6 @@ export default function MarkdownImport({ isOpen, onClose, onImported }) {
     if (!parsed?.length) return;
     setImporting(true);
     try {
-      // Build hierarchy mappings
       const subjectCache = {};
       const chapterCache = {};
       const topicCache = {};
@@ -77,58 +75,92 @@ export default function MarkdownImport({ isOpen, onClose, onImported }) {
       const colorPool = [...SUBJECT_COLORS];
       let colorIdx = 0;
 
-      const tasksToCreate = [];
-      for (const t of parsed) {
-        // Subject
-        let subject = subjectCache[t.subjectName];
-        if (!subject) {
-          subject = await getOrCreateSubject(t.subjectName, colorPool[colorIdx % colorPool.length]);
+      // 1. Gather unique subjects
+      const uniqueSubjects = [...new Set(parsed.map(t => t.subjectName))];
+      for (const sName of uniqueSubjects) {
+        if (!subjectCache[sName]) {
+          subjectCache[sName] = await getOrCreateSubject(sName, colorPool[colorIdx % colorPool.length]);
           colorIdx++;
-          subjectCache[t.subjectName] = subject;
         }
+      }
 
-        // Chapter
-        const chapKey = `${t.subjectName}::${t.chapterName}`;
-        let chapter = chapterCache[chapKey];
-        if (!chapter) {
-          chapter = await getOrCreateChapter(subject.id, t.chapterName);
-          chapterCache[chapKey] = chapter;
+      // 2. Gather unique chapters
+      const uniqueChapters = [...new Set(parsed.map(t => `${t.subjectName}::${t.chapterName}`))];
+      for (const chapKey of uniqueChapters) {
+        if (!chapterCache[chapKey]) {
+          const [sName, cName] = chapKey.split('::');
+          chapterCache[chapKey] = await getOrCreateChapter(subjectCache[sName].id, cName);
         }
+      }
 
-        // Topic
-        const topicKey = `${chapKey}::${t.topicName}`;
-        let topic = topicCache[topicKey];
-        if (!topic) {
-          topic = await getOrCreateTopic(chapter.id, t.topicName);
-          topicCache[topicKey] = topic;
+      // 3. Gather unique topics
+      const uniqueTopics = [...new Set(parsed.map(t => `${t.subjectName}::${t.chapterName}::${t.topicName}`))];
+      for (const topicKey of uniqueTopics) {
+        if (!topicCache[topicKey]) {
+          const [sName, cName, tName] = topicKey.split('::');
+          const chapKey = `${sName}::${cName}`;
+          topicCache[topicKey] = await getOrCreateTopic(chapterCache[chapKey].id, tName);
         }
+      }
 
-        // Sub-topic (optional)
-        let subTopic = null;
-        if (t.subTopicName) {
-          const stKey = `${topicKey}::${t.subTopicName}`;
-          subTopic = subTopicCache[stKey];
-          if (!subTopic) {
-            subTopic = await getOrCreateSubTopic(topic.id, t.subTopicName);
-            subTopicCache[stKey] = subTopic;
-          }
+      // 4. Gather unique sub-topics and create them concurrently
+      const uniqueSubTopics = [...new Set(parsed.filter(t => t.subTopicName).map(t => `${t.subjectName}::${t.chapterName}::${t.topicName}::${t.subTopicName}`))];
+      const subTopicPromises = uniqueSubTopics.map(async (stKey) => {
+        if (!subTopicCache[stKey]) {
+          const [sName, cName, tName, stName] = stKey.split('::');
+          const topicKey = `${sName}::${cName}::${tName}`;
+          const topicId = topicCache[topicKey].id;
+          const st = await getOrCreateSubTopic(topicId, stName);
+          subTopicCache[stKey] = st;
         }
+      });
+      await Promise.all(subTopicPromises);
 
-        tasksToCreate.push({
-          subject_id: subject.id,
-          chapter_id: chapter.id,
-          topic_id: topic.id,
-          sub_topic_id: subTopic?.id || null,
+      // 5. Build bulk task rows
+      const tasksToCreate = parsed.map(t => {
+        const sName = t.subjectName;
+        const cName = t.chapterName;
+        const tName = t.topicName;
+        const stName = t.subTopicName;
+        
+        const chapKey = `${sName}::${cName}`;
+        const topicKey = `${chapKey}::${tName}`;
+        const stKey = `${topicKey}::${stName}`;
+
+        return {
+          subject_id: subjectCache[sName].id,
+          chapter_id: chapterCache[chapKey].id,
+          topic_id: topicCache[topicKey].id,
+          sub_topic_id: stName ? subTopicCache[stKey].id : null,
           title: t.title,
           priority: t.priority || null,
           due_date: t.due_date || null,
-          is_revision: t.is_revision || false,
-          is_completed: t.is_completed || false,
-          completed_at: t.completed_at || null,
-        });
+        };
+      });
+
+      const taskStatesToCreate = parsed.map(t => ({
+        is_revision: t.is_revision || false,
+        is_completed: t.is_completed || false,
+        completed_at: t.completed_at || null,
+      }));
+
+      // 6. Bulk Insert Tasks
+      const created = await createBulkTasks(tasksToCreate);
+
+      // 7. Bulk Insert User States
+      if (created && created.length === tasksToCreate.length) {
+        const statesToInsert = created.map((ct, i) => ({
+          task_id: ct.id,
+          is_completed: taskStatesToCreate[i].is_completed,
+          completed_at: taskStatesToCreate[i].completed_at,
+          is_revision: taskStatesToCreate[i].is_revision,
+        })).filter(s => s.is_completed || s.is_revision);
+
+        if (statesToInsert.length > 0) {
+          await createBulkTaskStates(statesToInsert);
+        }
       }
 
-      const created = await createBulkTasks(tasksToCreate);
       toast.success(`Imported ${created.length} tasks successfully!`);
       onImported(created);
       setContent('');
@@ -257,10 +289,9 @@ export default function MarkdownImport({ isOpen, onClose, onImported }) {
           overflowX: 'auto',
           lineHeight: 1.6
         }}>
-{`# Subject: Physics
+          {`# Subject: Physics
 ## Chapter: Mechanics
 ### Topic: Newton's Laws
-#### Sub-topic: First Law (optional)
 - [ ] Task title | priority: high | due: YYYY-MM-DD | revision: true
 - [x] Already completed task`}
         </pre>

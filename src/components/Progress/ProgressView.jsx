@@ -6,6 +6,7 @@ import { normalizeSubjectColor } from '../../utils/subjectColor';
 import { TrendingUp, ChevronDown, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ProgressLineChart from './ProgressLineChart';
+import KnowledgeConstellation from './KnowledgeConstellation';
 
 function SubjectProgressCard({ subject, chapters }) {
   const [expanded, setExpanded] = useState(false);
@@ -33,6 +34,27 @@ function SubjectProgressCard({ subject, chapters }) {
       </div>
 
       <ProgressBar value={subject.percentage} size="md" color={color} />
+
+      {/* Predictive Analytics Badge */}
+      <div style={{ 
+        marginTop: 'var(--space-3)', 
+        padding: 'var(--space-2) var(--space-3)', 
+        background: 'rgba(255,255,255,0.03)', 
+        borderRadius: '8px', 
+        border: '1px solid rgba(255,255,255,0.05)', 
+        fontSize: '0.85rem', 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px' 
+      }}>
+        {subject.percentage === 100 ? (
+          <><span style={{fontSize: '1rem'}}>✨</span> <span style={{color: 'var(--text-muted)'}}>Mastered on <strong style={{color: 'var(--text-primary)'}}>{new Date(subject.lastCompletedAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}</strong></span></>
+        ) : subject.predictedCompletionDate ? (
+          <><span style={{fontSize: '1rem'}}>🚀</span> <span style={{color: 'var(--text-muted)'}}>At current pace, mastering by <strong style={{color: color}}>{new Date(subject.predictedCompletionDate).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}</strong></span></>
+        ) : (
+          <><span style={{fontSize: '1rem'}}>⏳</span> <span style={{color: 'var(--text-muted)', fontStyle: 'italic'}}>Complete a task to get a mastery prediction</span></>
+        )}
+      </div>
 
       {expanded && subjectChapters.length > 0 && (
         <div className="chapter-progress-list">
@@ -126,6 +148,11 @@ export default function ProgressView() {
       {/* Completion Trends Chart */}
       <div className="progress-section-container slide-up" style={{ marginTop: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
         <ProgressLineChart completedTimestamps={overall?.completedTimestamps ?? []} />
+      </div>
+
+      {/* Knowledge Constellation Graph */}
+      <div className="progress-section-container slide-up" style={{ marginBottom: 'var(--space-8)' }}>
+        <KnowledgeConstellation subjects={subjects} chapters={chapters} />
       </div>
 
       {/* Subject breakdown */}

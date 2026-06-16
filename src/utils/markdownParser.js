@@ -16,7 +16,6 @@ export function parseMarkdown(content) {
   let currentSubject = null;
   let currentChapter = null;
   let currentTopic = null;
-  let currentSubTopic = null;
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
@@ -28,7 +27,6 @@ export function parseMarkdown(content) {
       currentSubject = subjectMatch[1].trim();
       currentChapter = null;
       currentTopic = null;
-      currentSubTopic = null;
       continue;
     }
 
@@ -37,7 +35,6 @@ export function parseMarkdown(content) {
     if (chapterMatch) {
       currentChapter = chapterMatch[1].trim();
       currentTopic = null;
-      currentSubTopic = null;
       continue;
     }
 
@@ -45,14 +42,6 @@ export function parseMarkdown(content) {
     const topicMatch = line.match(/^###\s+Topic:\s*(.+)/i);
     if (topicMatch) {
       currentTopic = topicMatch[1].trim();
-      currentSubTopic = null;
-      continue;
-    }
-
-    // #### Sub-topic:
-    const subTopicMatch = line.match(/^####\s+Sub-topic:\s*(.+)/i);
-    if (subTopicMatch) {
-      currentSubTopic = subTopicMatch[1].trim();
       continue;
     }
 
@@ -86,7 +75,7 @@ export function parseMarkdown(content) {
           subjectName: currentSubject,
           chapterName: currentChapter,
           topicName: currentTopic,
-          subTopicName: currentSubTopic || null,
+          subTopicName: title,
           title,
           priority,
           due_date: dueDate || null,

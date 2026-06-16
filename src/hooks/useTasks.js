@@ -6,15 +6,15 @@ async function fetchUserTaskStates(taskIds) {
   if (!taskIds || taskIds.length === 0) return {};
   const { data: user } = await supabase.auth.getUser();
   if (!user?.user) return {};
-  
+
   const { data, error } = await supabase
     .from('user_task_states')
     .select('*')
     .eq('user_id', user.user.id)
     .in('task_id', taskIds);
-    
+
   if (error) return {};
-  
+
   const stateMap = {};
   for (const st of data) stateMap[st.task_id] = st;
   return stateMap;
@@ -47,23 +47,23 @@ export async function fetchTasks(filters = {}) {
     }
     throw error;
   }
-  
+
   const stateMap = await fetchUserTaskStates(data.map(t => t.id));
-  
+
   let mergedData = data.map(t => ({
     ...t,
     is_completed: stateMap[t.id]?.is_completed || false,
     is_revision: stateMap[t.id]?.is_revision || false,
     completed_at: stateMap[t.id]?.completed_at || null,
   }));
-  
+
   if (filters.is_completed !== undefined) {
     mergedData = mergedData.filter(t => t.is_completed === filters.is_completed);
   }
   if (filters.is_revision !== undefined) {
     mergedData = mergedData.filter(t => t.is_revision === filters.is_revision);
   }
-  
+
   return mergedData;
 }
 
@@ -202,7 +202,7 @@ export async function fetchTasksCreatedToday() {
   const { data, error } = await supabase
     .from('tasks')
     .select('id')
-        .gte('created_at', startOfDay)
+    .gte('created_at', startOfDay)
     .lt('created_at', endOfDay);
   if (error) throw error;
   return data.length;
@@ -218,6 +218,6 @@ export async function reorderTasks(orderedTasks) {
       .from('tasks')
       .update({ sort_order: i })
       .eq('id', t.id)
-        );
+  );
   await Promise.all(updates);
 }

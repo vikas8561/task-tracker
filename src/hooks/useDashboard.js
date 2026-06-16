@@ -46,16 +46,62 @@ export async function fetchProgressBySubject() {
         color: normalizeSubjectColor(task.subjects?.color, sid),
         total: 0,
         completed: 0,
+        createdAtDates: [],
+        completedAtDates: [],
       };
     }
     subjectMap[sid].total++;
-    if (task.is_completed) subjectMap[sid].completed++;
+    if (task.created_at) subjectMap[sid].createdAtDates.push(new Date(task.created_at).getTime());
+
+    if (task.is_completed) {
+      subjectMap[sid].completed++;
+      if (task.completed_at) {
+        subjectMap[sid].completedAtDates.push(new Date(task.completed_at).getTime());
+      }
+    }
   }
 
-  return Object.values(subjectMap).map((s) => ({
-    ...s,
-    percentage: s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0,
-  }));
+  return Object.values(subjectMap).map((s) => {
+    const percentage = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
+
+    let predictedCompletionDate = null;
+    let lastCompletedAt = null;
+
+    if (s.completedAtDates.length > 0) {
+      const sortedCompleted = [...s.completedAtDates].sort((a, b) => a - b);
+      lastCompletedAt = sortedCompleted[sortedCompleted.length - 1];
+    }
+
+    if (percentage < 100 && s.completed > 0 && s.createdAtDates.length > 0) {
+      const sortedCreated = [...s.createdAtDates].sort((a, b) => a - b);
+      const firstCreatedAt = sortedCreated[0];
+      const now = Date.now();
+
+      // Calculate elapsed days since the first task was created
+      const elapsedMs = now - firstCreatedAt;
+      const elapsedDays = Math.max(1, elapsedMs / (1000 * 60 * 60 * 24)); // Minimum 1 day to avoid infinite velocity
+
+      const tasksPerDay = s.completed / elapsedDays;
+      const remainingTasks = s.total - s.completed;
+
+      if (tasksPerDay > 0) {
+        const remainingDays = remainingTasks / tasksPerDay;
+        const predictedDate = new Date(now + remainingDays * 24 * 60 * 60 * 1000);
+        predictedCompletionDate = predictedDate.toISOString();
+      }
+    }
+
+    // Clean up massive arrays before returning to keep payload small
+    delete s.createdAtDates;
+    delete s.completedAtDates;
+
+    return {
+      ...s,
+      percentage,
+      predictedCompletionDate,
+      lastCompletedAt
+    };
+  });
 }
 
 export async function fetchProgressByChapter() {
@@ -88,17 +134,17 @@ export async function fetchProgressByChapter() {
 export async function fetchRecentTasks(limit = 5) {
   // Sort manually by created_at desc
   const allTasks = await safeQuery(() => fetchTasks(), []);
-  
+
   const sorted = allTasks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   const data = sorted.slice(0, limit);
-  
+
   return data.map((task) => ({
     ...task,
     subjects: task.subjects
       ? {
-          ...task.subjects,
-          color: normalizeSubjectColor(task.subjects.color, task.subjects.id),
-        }
+        ...task.subjects,
+        color: normalizeSubjectColor(task.subjects.color, task.subjects.id),
+      }
       : null,
   }));
 }
