@@ -14,7 +14,7 @@ import {
   uploadNoteImage,
 } from '../../lib/notesApi';
 import { buildBacklinkIndex, buildGraphData, initFuse } from '../../lib/notesEngine';
-
+import { useAuth } from '../../context/AuthContext';
 
 import NoteEditor from './NoteEditor';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -49,6 +49,7 @@ function useDebounce(value, delay) {
 export default function NotesView() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   // Data
   const [notes, setNotes] = useState([]);
@@ -83,6 +84,7 @@ export default function NotesView() {
 
   // Notes nav panel collapsed state — persisted
   const [navCollapsed, setNavCollapsed] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) return true;
     try { return localStorage.getItem('notes-nav-collapsed') === 'true'; } catch { return false; }
   });
 
@@ -93,6 +95,21 @@ export default function NotesView() {
       return next;
     });
   };
+
+  // Scroll to hide topbar on mobile
+  const [topbarVisible, setTopbarVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  const handleScroll = useCallback((e) => {
+    if (typeof window === 'undefined' || window.innerWidth > 768) return;
+    const currentScrollY = e.target.scrollTop;
+    if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+      setTopbarVisible(false);
+    } else if (currentScrollY < lastScrollY.current) {
+      setTopbarVisible(true);
+    }
+    lastScrollY.current = currentScrollY;
+  }, []);
 
   // Derived
   const debouncedContent = useDebounce(editorContent, 800);
@@ -120,7 +137,7 @@ export default function NotesView() {
 
   // Load note when slug changes
   useEffect(() => {
-    if (!slug) {
+    if (!slug || slug === 'undefined' || slug === 'null') {
       setActiveNote(null); setEditorContent(''); setEditorTitle(''); setEditorTags(''); setIsDirty(false);
       return;
     }
@@ -134,8 +151,15 @@ export default function NotesView() {
         setIsDirty(false);
         setNoteLoading(false);
       })
-      .catch(() => { toast.error('Note not found'); navigate('/notes'); setNoteLoading(false); });
-  }, [slug, navigate]);
+      .catch(() => { 
+        // Only show error if the user actually has notes (prevents error loop on empty accounts)
+        if (allNotesMeta.length > 0) {
+          toast.error('Note not found'); 
+        }
+        navigate('/notes', { replace: true }); 
+        setNoteLoading(false); 
+      });
+  }, [slug, navigate, allNotesMeta.length]);
 
   // Auto-save
   useEffect(() => {
@@ -281,7 +305,7 @@ export default function NotesView() {
         <div className="notes-main">
         <button
           type="button"
-          className="notes-mobile-sidebar-btn mobile-only"
+          className={`notes-mobile-sidebar-btn mobile-only ${!topbarVisible ? 'topbar-hidden' : ''}`}
           onClick={toggleNavCollapse}
           aria-label="Toggle notes sidebar"
           title="Toggle sidebar"
@@ -289,7 +313,7 @@ export default function NotesView() {
           <PanelRightOpen size={18} />
         </button>
         {/* Topbar */}
-        <div className="notes-editor-topbar">
+        <div className={`notes-editor-topbar ${!topbarVisible ? 'topbar-hidden' : ''}`}>
           {activeNote ? (
             <>
               <div className="notes-breadcrumb">
@@ -302,6 +326,7 @@ export default function NotesView() {
                   onChange={(e) => handleTitleChange(e.target.value)}
                   placeholder="Untitled Note"
                   spellCheck="false"
+                  readOnly={!isAdmin}
                 />
                 {saving && <span className="notes-saving-indicator">Saving...</span>}
                 {isDirty && !saving && <span className="notes-dirty-indicator">●</span>}
@@ -315,15 +340,20 @@ export default function NotesView() {
                     value={editorTags}
                     onChange={(e) => handleTagsChange(e.target.value)}
                     placeholder="Add tags..."
+                    readOnly={!isAdmin}
                   />
                 </div>
                 <div className="notes-view-divider" />
-                <button className={`notes-view-btn ${viewMode === 'edit' ? 'active' : ''}`} onClick={() => setViewMode('edit')}>
-                  <Edit3 size={16} /> Edit
-                </button>
-                <button className={`notes-view-btn ${viewMode === 'split' ? 'active' : ''}`} onClick={() => setViewMode('split')}>
-                  <Columns size={16} /> Split
-                </button>
+                {isAdmin && (
+                  <>
+                    <button className={`notes-view-btn ${viewMode === 'edit' ? 'active' : ''}`} onClick={() => setViewMode('edit')}>
+                      <Edit3 size={16} /> Edit
+                    </button>
+                    <button className={`notes-view-btn ${viewMode === 'split' ? 'active' : ''}`} onClick={() => setViewMode('split')}>
+                      <Columns size={16} /> Split
+                    </button>
+                  </>
+                )}
                 <button className={`notes-view-btn ${viewMode === 'preview' ? 'active' : ''}`} onClick={() => setViewMode('preview')}>
                   <Eye size={16} /> Preview
                 </button>
@@ -342,10 +372,12 @@ export default function NotesView() {
               <div className="notes-empty-icon">📝</div>
               <h2>Your Notes</h2>
               <p>Select a note to edit, or create a new one.</p>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <button className="btn btn-primary" onClick={() => handleCreateNote(null)}>
-                  <Plus size={16} /> Create note
-                </button>
+              <div className="notes-empty-actions">
+                {isAdmin && (
+                  <button className="btn btn-primary" onClick={() => handleCreateNote(null)}>
+                    <Plus size={16} /> Create note
+                  </button>
+                )}
                 <button className="btn btn-ghost" onClick={() => setShowGraph((v) => !v)}>
                   <GitBranch size={16} /> View Graph
                 </button>
@@ -358,7 +390,7 @@ export default function NotesView() {
         {activeNote && !noteLoading && viewMode !== 'graph' && (
           <div className={`notes-content-area notes-mode-${viewMode}`}>
             {(viewMode === 'edit' || viewMode === 'split') && (
-              <div className="notes-editor-pane">
+              <div className="notes-editor-pane" onScroll={handleScroll}>
                 <NoteEditor
                   value={editorContent}
                   onChange={handleEditorChange}
@@ -368,7 +400,7 @@ export default function NotesView() {
               </div>
             )}
             {(viewMode === 'preview' || viewMode === 'split') && (
-              <div className="notes-preview-pane">
+              <div className="notes-preview-pane" onScroll={handleScroll}>
                 <MarkdownRenderer content={editorContent} onLinkClick={() => {}} />
               </div>
             )}
@@ -463,13 +495,15 @@ export default function NotesView() {
           {navCollapsed ? (
             <div className="notes-nav-scroll notes-nav-scroll--collapsed">
               <div className="notes-nav-icon-strip">
-                <button
-                  className="notes-nav-icon-btn"
-                  onClick={() => handleCreateNote(null)}
-                  title="New note"
-                >
-                  <Plus size={17} />
-                </button>
+                {isAdmin && (
+                  <button
+                    className="notes-nav-icon-btn"
+                    onClick={() => handleCreateNote(null)}
+                    title="New note"
+                  >
+                    <Plus size={17} />
+                  </button>
+                )}
                 <button
                   className={`notes-nav-icon-btn ${selectedFolderId === null ? 'active' : ''}`}
                   onClick={() => setSelectedFolderId(null)}
@@ -492,21 +526,25 @@ export default function NotesView() {
           ) : (
             <div className="notes-nav-body">
               <div className="notes-nav-actions">
-                <button
-                  className="notes-nav-action-btn"
-                  onClick={() => handleCreateNote(null)}
-                  title="New note"
-                  id="notes-new-btn"
-                >
-                  <FilePlus2 size={18} />
-                </button>
-                <button
-                  className="notes-nav-action-btn"
-                  onClick={() => handleCreateFolder(null)}
-                  title="New folder"
-                >
-                  <FolderPlus size={18} />
-                </button>
+                {isAdmin && (
+                  <>
+                    <button
+                      className="notes-nav-action-btn"
+                      onClick={() => handleCreateNote(null)}
+                      title="New note"
+                      id="notes-new-btn"
+                    >
+                      <FilePlus2 size={18} />
+                    </button>
+                    <button
+                      className="notes-nav-action-btn"
+                      onClick={() => handleCreateFolder(null)}
+                      title="New folder"
+                    >
+                      <FolderPlus size={18} />
+                    </button>
+                  </>
+                )}
                 <button
                   className={`notes-nav-action-btn ${showArchivedOnly ? 'active' : ''}`}
                   onClick={() => setShowArchivedOnly((v) => !v)}

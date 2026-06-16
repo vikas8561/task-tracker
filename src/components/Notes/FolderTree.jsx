@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, FolderOpen, Folder, Plus, MoreVertical, Pencil, Trash2, FileText, Pin, Archive } from 'lucide-react';
 import { buildFolderTree } from '../../lib/notesEngine';
+import { useAuth } from '../../context/AuthContext';
 
 function NoteRow({ note, selectedSlug, onSelectNote, onRenameNote, onDeleteNote, onTogglePin, onToggleArchive, rootLevel = false }) {
+  const { isAdmin } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
 
   const handleContextMenu = (e) => {
+    if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     setShowMenu(true);
@@ -22,32 +25,34 @@ function NoteRow({ note, selectedSlug, onSelectNote, onRenameNote, onDeleteNote,
       <span className="obs-tree-file-label">{note.title}</span>
 
       {/* Context actions */}
-      <div className="obs-tree-actions" onClick={(e) => e.stopPropagation()}>
-        <button
-          className="obs-tree-action-btn"
-          onClick={() => setShowMenu((m) => !m)}
-          title="Options"
-        >
-          <MoreVertical size={12} />
-        </button>
-        {showMenu && (
-          <div className="obs-tree-menu" onMouseLeave={() => setShowMenu(false)}>
-            <button className="obs-tree-menu-item" onClick={() => { onRenameNote(note); setShowMenu(false); }}>
-              <Pencil size={12} /> Rename
-            </button>
-            <button className="obs-tree-menu-item" onClick={() => { onTogglePin(note); setShowMenu(false); }}>
-              <Pin size={12} /> {note.is_pinned ? 'Unpin' : 'Pin'}
-            </button>
-            <button className="obs-tree-menu-item" onClick={() => { onToggleArchive(note); setShowMenu(false); }}>
-              <Archive size={12} /> {note.is_archived ? 'Unarchive' : 'Archive'}
-            </button>
-            <div className="obs-tree-menu-sep" />
-            <button className="obs-tree-menu-item danger" onClick={() => { onDeleteNote(note); setShowMenu(false); }}>
-              <Trash2 size={12} /> Delete
-            </button>
-          </div>
-        )}
-      </div>
+      {isAdmin && (
+        <div className="obs-tree-actions" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="obs-tree-action-btn"
+            onClick={() => setShowMenu((m) => !m)}
+            title="Options"
+          >
+            <MoreVertical size={12} />
+          </button>
+          {showMenu && (
+            <div className="obs-tree-menu" onMouseLeave={() => setShowMenu(false)}>
+              <button className="obs-tree-menu-item" onClick={() => { onRenameNote(note); setShowMenu(false); }}>
+                <Pencil size={12} /> Rename
+              </button>
+              <button className="obs-tree-menu-item" onClick={() => { onTogglePin(note); setShowMenu(false); }}>
+                <Pin size={12} /> {note.is_pinned ? 'Unpin' : 'Pin'}
+              </button>
+              <button className="obs-tree-menu-item" onClick={() => { onToggleArchive(note); setShowMenu(false); }}>
+                <Archive size={12} /> {note.is_archived ? 'Unarchive' : 'Archive'}
+              </button>
+              <div className="obs-tree-menu-sep" />
+              <button className="obs-tree-menu-item danger" onClick={() => { onDeleteNote(note); setShowMenu(false); }}>
+                <Trash2 size={12} /> Delete
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -68,6 +73,7 @@ function FolderNode({
   onTogglePin,
   onToggleArchive,
 }) {
+  const { isAdmin } = useAuth();
   const [expanded, setExpanded] = useState(depth === 0);
   const [showMenu, setShowMenu] = useState(false);
   const hasChildren = folder.children?.length > 0;
@@ -75,6 +81,7 @@ function FolderNode({
   const hasContent = hasChildren || folderNotes.length > 0;
 
   const handleContextMenu = (e) => {
+    if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     setShowMenu(true);
@@ -105,32 +112,34 @@ function FolderNode({
         <span className="obs-tree-label">{folder.name}</span>
 
         {/* Context actions */}
-        <div className="obs-tree-actions" onClick={(e) => e.stopPropagation()}>
-          <button
-            className="obs-tree-action-btn"
-            onClick={() => setShowMenu((m) => !m)}
-            title="Options"
-          >
-            <MoreVertical size={12} />
-          </button>
-          {showMenu && (
-            <div className="obs-tree-menu" onMouseLeave={() => setShowMenu(false)}>
-              <button className="obs-tree-menu-item" onClick={() => { onCreateNote(folder.id); setShowMenu(false); }}>
-                <Plus size={12} /> New note
-              </button>
-              <button className="obs-tree-menu-item" onClick={() => { onCreateFolder(folder.id); setShowMenu(false); }}>
-                <Folder size={12} /> New subfolder
-              </button>
-              <button className="obs-tree-menu-item" onClick={() => { onRenameFolder(folder); setShowMenu(false); }}>
-                <Pencil size={12} /> Rename
-              </button>
-              <div className="obs-tree-menu-sep" />
-              <button className="obs-tree-menu-item danger" onClick={() => { onDeleteFolder(folder.id); setShowMenu(false); }}>
-                <Trash2 size={12} /> Delete
-              </button>
-            </div>
-          )}
-        </div>
+        {isAdmin && (
+          <div className="obs-tree-actions" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="obs-tree-action-btn"
+              onClick={() => setShowMenu((m) => !m)}
+              title="Options"
+            >
+              <MoreVertical size={12} />
+            </button>
+            {showMenu && (
+              <div className="obs-tree-menu" onMouseLeave={() => setShowMenu(false)}>
+                <button className="obs-tree-menu-item" onClick={() => { onCreateNote(folder.id); setShowMenu(false); }}>
+                  <Plus size={12} /> New note
+                </button>
+                <button className="obs-tree-menu-item" onClick={() => { onCreateFolder(folder.id); setShowMenu(false); }}>
+                  <Folder size={12} /> New subfolder
+                </button>
+                <button className="obs-tree-menu-item" onClick={() => { onRenameFolder(folder); setShowMenu(false); }}>
+                  <Pencil size={12} /> Rename
+                </button>
+                <div className="obs-tree-menu-sep" />
+                <button className="obs-tree-menu-item danger" onClick={() => { onDeleteFolder(folder.id); setShowMenu(false); }}>
+                  <Trash2 size={12} /> Delete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Children: subfolders + notes */}

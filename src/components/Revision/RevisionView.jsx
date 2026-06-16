@@ -3,6 +3,7 @@ import TaskCard from '../Tasks/TaskCard';
 import TaskForm from '../Tasks/TaskForm';
 import ConfirmDialog from '../common/ConfirmDialog';
 import EmptyState from '../common/EmptyState';
+import CustomDropdown from '../common/CustomDropdown';
 import { fetchTasks, deleteTask } from '../../hooks/useTasks';
 import { fetchSubjects } from '../../hooks/useSubjects';
 import { BookMarked } from 'lucide-react';
@@ -79,62 +80,43 @@ export default function RevisionView() {
 
   return (
     <div className="fade-in">
-      <div className="page-header slide-down" style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
-        background: 'var(--bg-secondary)',
-        padding: '24px 32px',
-        borderRadius: '16px',
-        border: '1px solid var(--border-glass)',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-        marginBottom: '32px'
-      }}>
-        <div style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '16px',
-          background: 'var(--warning)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          boxShadow: '0 4px 12px var(--warning-soft)'
-        }}>
+      <div className="page-header progress-page-header slide-down">
+        <div className="progress-page-icon" style={{ background: 'var(--warning)', boxShadow: '0 4px 12px var(--warning-soft)' }}>
           <BookMarked size={28} />
         </div>
-        <div>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px', marginTop: 0 }}>Revision Tasks</h2>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Tasks marked for revision. Review and reinforce your knowledge.</p>
+        <div className="progress-page-text">
+          <h2 className="progress-page-title">Revision Tasks</h2>
+          <p className="progress-page-desc">Tasks marked for revision. Review and reinforce your knowledge.</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="filters-bar">
-        <select
-          className="form-select"
-          style={{ width: 'auto', padding: '6px 12px', fontSize: '0.8rem' }}
+      <div className="filters-bar revision-filters">
+        <CustomDropdown
+          className="revision-filter-select"
           value={subjectFilter}
-          onChange={(e) => setSubjectFilter(e.target.value)}
-          id="revision-filter-subject"
-        >
-          <option value="all">All Subjects</option>
-          {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+          onChange={(val) => setSubjectFilter(val)}
+          options={[
+            { value: 'all', label: 'All Subjects' },
+            ...subjects.map(s => ({ value: s.id, label: s.name }))
+          ]}
+        />
 
-        {['all', 'active', 'completed'].map((s) => (
-          <button
-            key={s}
-            className={`filter-chip ${statusFilter === s ? 'active' : ''}`}
-            onClick={() => setStatusFilter(s)}
-            id={`revision-filter-${s}`}
-          >
-            {s.charAt(0).toUpperCase() + s.slice(1)}
-          </button>
-        ))}
+        <div className="revision-filter-chips">
+          {['all', 'active', 'completed'].map((s) => (
+            <button
+              key={s}
+              className={`filter-chip ${statusFilter === s ? 'active' : ''}`}
+              onClick={() => setStatusFilter(s)}
+              id={`revision-filter-${s}`}
+            >
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
+      <p className="revision-tasks-count">
         {filtered.length} revision task{filtered.length !== 1 ? 's' : ''}
       </p>
 

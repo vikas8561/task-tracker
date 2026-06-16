@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { calculateStreak } from '../utils/streakCalculator';
 import { normalizeSubjectColor } from '../utils/subjectColor';
-
+import { fetchTasks } from './useTasks';
 
 // Safe query wrapper — returns fallback value instead of throwing on DB errors
 async function safeQuery(fn, fallback) {
@@ -14,18 +14,13 @@ async function safeQuery(fn, fallback) {
 
 export async function fetchDashboardStats() {
   const todayStr = new Date().toISOString().split('T')[0];
+  const allTasks = await safeQuery(() => fetchTasks(), []);
 
-  const [totalRes, completedRes, todayRes, completedData] = await Promise.all([
-    supabase.from('tasks').select('*', { count: 'exact', head: true }),
-    supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('is_completed', true),
-    supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('due_date', todayStr),
-    supabase.from('tasks').select('completed_at').eq('is_completed', true).not('completed_at', 'is', null),
-  ]);
-
-  const totalTasks = totalRes.count || 0;
-  const completedTasks = completedRes.count || 0;
-  const todaysTasks = todayRes.count || 0;
-  const completedTimestamps = (completedData.data || []).map((t) => t.completed_at);
+  const totalTasks = allTasks.length;
+  const todaysTasks = allTasks.filter(t => t.due_date === todayStr).length;
+  const completedTasksData = allTasks.filter(t => t.is_completed);
+  const completedTasks = completedTasksData.length;
+  const completedTimestamps = completedTasksData.map(t => t.completed_at).filter(Boolean);
   const streak = calculateStreak(completedTimestamps);
 
   return {
@@ -39,13 +34,10 @@ export async function fetchDashboardStats() {
 }
 
 export async function fetchProgressBySubject() {
-  const { data: tasks } = await supabase
-    .from('tasks')
-    .select('subject_id, is_completed, subjects(id, name, color)')
-    ;
+  const allTasks = await safeQuery(() => fetchTasks(), []);
 
   const subjectMap = {};
-  for (const task of tasks || []) {
+  for (const task of allTasks) {
     const sid = task.subject_id;
     if (!subjectMap[sid]) {
       subjectMap[sid] = {
@@ -67,13 +59,10 @@ export async function fetchProgressBySubject() {
 }
 
 export async function fetchProgressByChapter() {
-  const { data: tasks } = await supabase
-    .from('tasks')
-    .select('chapter_id, subject_id, is_completed, chapters(id, name), subjects(id, name, color)')
-    ;
+  const allTasks = await safeQuery(() => fetchTasks(), []);
 
   const chapterMap = {};
-  for (const task of tasks || []) {
+  for (const task of allTasks) {
     const cid = task.chapter_id;
     if (!chapterMap[cid]) {
       chapterMap[cid] = {
@@ -97,12 +86,13 @@ export async function fetchProgressByChapter() {
 }
 
 export async function fetchRecentTasks(limit = 5) {
-  const { data } = await supabase
-    .from('tasks')
-    .select(`*, subjects(id, name, color), chapters(id, name), topics(id, name)`)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-  return (data || []).map((task) => ({
+  // Sort manually by created_at desc
+  const allTasks = await safeQuery(() => fetchTasks(), []);
+  
+  const sorted = allTasks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const data = sorted.slice(0, limit);
+  
+  return data.map((task) => ({
     ...task,
     subjects: task.subjects
       ? {

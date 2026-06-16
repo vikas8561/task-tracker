@@ -8,8 +8,10 @@ import EmptyState from '../common/EmptyState';
 import { fetchTasks, deleteTask } from '../../hooks/useTasks';
 import { CheckSquare, Upload, List, FolderTree } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormClose, editTaskProp, refreshKey }) {
+  const { isAdmin } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -72,11 +74,11 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
   }
 
   return (
-    <div>
+    <div className="task-page">
       {/* Toolbar */}
-      <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-5)', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="task-page-toolbar">
         {/* View toggle */}
-        <div className="htv-view-toggle" style={{ marginLeft: 'auto' }}>
+        <div className="htv-view-toggle task-page-view-toggle">
           <button
             className={`htv-toggle-btn ${viewMode === 'list' ? 'htv-toggle-active' : ''}`}
             onClick={() => setViewMode('list')}
@@ -107,9 +109,11 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
           title="No tasks found"
           description={searchQuery ? 'No tasks match your search.' : 'Create your first task to get started!'}
           action={
-            <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
-              + Add Task
-            </button>
+            isAdmin ? (
+              <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+                + Add Task
+              </button>
+            ) : null
           }
         />
       ) : viewMode === 'hierarchy' ? (

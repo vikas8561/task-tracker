@@ -9,6 +9,7 @@ const AuthContext = createContext({
   displayName: '',
   needsDisplayName: false,
   saveDisplayName: async () => {},
+  isAdmin: false,
 });
 
 export function AuthProvider({ children }) {
@@ -18,6 +19,7 @@ export function AuthProvider({ children }) {
 
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const needsDisplayName = useMemo(() => userNeedsDisplayName(user), [user]);
+  const isAdmin = useMemo(() => user?.email === 'vikas12252@gmail.com', [user]);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -56,7 +58,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, displayName, needsDisplayName, saveDisplayName }}>
+    <AuthContext.Provider value={{ user, session, loading, displayName, needsDisplayName, saveDisplayName, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

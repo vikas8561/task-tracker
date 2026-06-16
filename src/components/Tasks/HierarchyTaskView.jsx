@@ -20,6 +20,7 @@ import { toggleComplete, toggleRevision, reorderTasks, updateTask } from '../../
 import { normalizeSubjectColor } from '../../utils/subjectColor';
 import Badge from '../common/Badge';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -94,6 +95,7 @@ function countStats(chapters) {
 /* Resources cell — inline link chips + add-link form                  */
 /* ------------------------------------------------------------------ */
 function ResourcesCell({ task, onUpdated }) {
+  const { isAdmin } = useAuth();
   const [adding, setAdding] = useState(false);
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
@@ -149,14 +151,16 @@ function ResourcesCell({ task, onUpdated }) {
             <ExternalLink size={14} />
             {r.label}
           </a>
-          <button
-            className="htv-res-remove"
-            onClick={() => removeLink(i)}
-            title="Remove link"
-            id={`htv-res-rm-${task.id}-${i}`}
-          >
-            <X size={14} />
-          </button>
+          {isAdmin && (
+            <button
+              className="htv-res-remove"
+              onClick={() => removeLink(i)}
+              title="Remove link"
+              id={`htv-res-rm-${task.id}-${i}`}
+            >
+              <X size={14} />
+            </button>
+          )}
         </span>
       ))}
 
@@ -197,7 +201,9 @@ function ResourcesCell({ task, onUpdated }) {
             <X size={14} />
           </button>
         </span>
-      ) : (
+      ) : null}
+
+      {isAdmin && !adding && (
         <button
           className="htv-res-add-btn"
           onClick={() => setAdding(true)}
@@ -216,6 +222,7 @@ function ResourcesCell({ task, onUpdated }) {
 /* SubTopic row (individual task with checkbox)                        */
 /* ------------------------------------------------------------------ */
 function SubtopicRow({ task, onUpdated, onEdit, onDelete, dragHandleProps, isDragOver }) {
+  const { isAdmin } = useAuth();
   const [toggling, setToggling] = useState(false);
   const overdue = isOverdue(task.due_date) && !task.is_completed;
 
@@ -250,9 +257,11 @@ function SubtopicRow({ task, onUpdated, onEdit, onDelete, dragHandleProps, isDra
       ].join(' ')}
     >
       {/* Drag handle */}
-      <span className="htv-drag-handle" {...dragHandleProps} title="Drag to reorder">
-        <GripVertical size={14} />
-      </span>
+      {isAdmin && (
+        <span className="htv-drag-handle" {...dragHandleProps} title="Drag to reorder">
+          <GripVertical size={14} />
+        </span>
+      )}
 
       {/* Checkbox */}
       <button
@@ -298,22 +307,26 @@ function SubtopicRow({ task, onUpdated, onEdit, onDelete, dragHandleProps, isDra
         >
           <BookMarked size={16} />
         </button>
-        <button
-          className="btn btn-ghost btn-icon htv-action-btn"
-          onClick={() => onEdit(task)}
-          title="Edit"
-          id={`htv-edit-${task.id}`}
-        >
-          <Edit2 size={16} />
-        </button>
-        <button
-          className="btn btn-ghost btn-icon htv-action-btn htv-action-delete"
-          onClick={() => onDelete(task)}
-          title="Delete"
-          id={`htv-del-${task.id}`}
-        >
-          <Trash2 size={16} />
-        </button>
+        {isAdmin && (
+          <>
+            <button
+              className="btn btn-ghost btn-icon htv-action-btn"
+              onClick={() => onEdit(task)}
+              title="Edit"
+              id={`htv-edit-${task.id}`}
+            >
+              <Edit2 size={16} />
+            </button>
+            <button
+              className="btn btn-ghost btn-icon htv-action-btn htv-action-delete"
+              onClick={() => onDelete(task)}
+              title="Delete"
+              id={`htv-del-${task.id}`}
+            >
+              <Trash2 size={16} />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

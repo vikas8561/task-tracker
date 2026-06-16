@@ -13,10 +13,11 @@ import TaskForm from '../Tasks/TaskForm';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
-  const { displayName } = useAuth();
+  const { displayName, isAdmin } = useAuth();
   const [stats, setStats] = useState(null);
   const [recentTasks, setRecentTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -37,6 +38,14 @@ export default function Dashboard() {
   }
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)');
+    const apply = () => setIsMobile(media.matches);
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
 
   function handleTaskUpdated(updated) {
     setRecentTasks((prev) => prev.map((t) => t.id === updated.id ? updated : t));
@@ -95,7 +104,11 @@ export default function Dashboard() {
         <div className="dashboard-grid-main">
           <div className="card-3d card-3d-glowing overall-progress-card">
             <div className="overall-progress-layout">
-              <CircularProgress value={stats?.overallProgress ?? 0} />
+              <CircularProgress
+                value={stats?.overallProgress ?? 0}
+                size={isMobile ? 96 : 140}
+                strokeWidth={isMobile ? 10 : 12}
+              />
               <div className="overall-progress-info">
                 <h3>Overall Progress</h3>
                 <p>
@@ -139,13 +152,15 @@ export default function Dashboard() {
       <div className="dashboard-recent-section">
         <div className="section-header">
           <h3>Recent Tasks</h3>
-          <button
-            className="btn btn-secondary btn-sm dashboard-recent-add-btn"
-            onClick={() => setShowForm(true)}
-            id="dashboard-add-task-btn"
-          >
-            <Plus size={14} /> Add Task
-          </button>
+          {isAdmin && (
+            <button
+              className="btn btn-secondary btn-sm dashboard-recent-add-btn"
+              onClick={() => setShowForm(true)}
+              id="dashboard-add-task-btn"
+            >
+              <Plus size={14} /> Add Task
+            </button>
+          )}
         </div>
 
         {recentTasks.length === 0 ? (
@@ -154,9 +169,11 @@ export default function Dashboard() {
             title="No tasks yet"
             description="Start by creating your first task!"
             action={
-              <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
-                Create Task
-              </button>
+              isAdmin ? (
+                <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+                  Create Task
+                </button>
+              ) : null
             }
           />
         ) : (

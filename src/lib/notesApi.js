@@ -112,12 +112,28 @@ export async function deleteFolder(id) {
 
 // ─── Notes API ────────────────────────────────────────────────────────────────
 
+async function fetchUserNoteStates(noteIds) {
+  if (!noteIds || noteIds.length === 0) return {};
+  const { data: user } = await supabase.auth.getUser();
+  if (!user?.user) return {};
+
+  const { data, error } = await supabase
+    .from('user_note_states')
+    .select('*')
+    .eq('user_id', user.user.id)
+    .in('note_id', noteIds);
+
+  if (error) return {};
+
+  const stateMap = {};
+  for (const st of data) stateMap[st.note_id] = st;
+  return stateMap;
+}
+
 export async function fetchNotes(options = {}) {
   let query = supabase
     .from('notes')
-    .select('id, user_id, folder_id, title, slug, tags, is_pinned, is_archived, word_count, reading_time, created_at, updated_at')
-    .order('is_pinned', { ascending: false })
-    .order('updated_at', { ascending: false });
+    .select('id, user_id, folder_id, title, slug, tags, is_pinned, is_archived, word_count, reading_time, created_at, updated_at');
 
   if (options.folderId !== undefined) {
     if (options.folderId === null) {
@@ -126,26 +142,49 @@ export async function fetchNotes(options = {}) {
       query = query.eq('folder_id', options.folderId);
     }
   }
-  if (options.includeArchived !== true) {
-    query = query.eq('is_archived', false);
-  }
   if (options.tags && options.tags.length > 0) {
     query = query.contains('tags', options.tags);
   }
 
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+
+  const stateMap = await fetchUserNoteStates(data.map(n => n.id));
+  
+  let mergedData = data.map(n => ({
+    ...n,
+    is_pinned: stateMap[n.id]?.is_pinned || false,
+    is_archived: stateMap[n.id]?.is_archived || false
+  }));
+
+  if (options.includeArchived !== true) {
+    mergedData = mergedData.filter(n => !n.is_archived);
+  }
+  
+  mergedData.sort((a, b) => {
+    if (a.is_pinned && !b.is_pinned) return -1;
+    if (!a.is_pinned && b.is_pinned) return 1;
+    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime() > 0 ? -1 : 1;
+  });
+
+  return mergedData;
 }
 
 export async function fetchAllNotesMeta() {
-  // Fetch just enough for backlink indexing + graph (no full content)
   const { data, error } = await supabase
     .from('notes')
-    .select('id, title, slug, tags, content, folder_id, updated_at')
-    .eq('is_archived', false);
+    .select('id, title, slug, tags, content, folder_id, updated_at');
   if (error) throw error;
-  return (data || []).map(parseNote);
+
+  const stateMap = await fetchUserNoteStates(data.map(n => n.id));
+  let mergedData = data.map(n => ({
+    ...n,
+    is_pinned: stateMap[n.id]?.is_pinned || false,
+    is_archived: stateMap[n.id]?.is_archived || false
+  }));
+  
+  mergedData = mergedData.filter(n => !n.is_archived);
+  return mergedData.map(parseNote);
 }
 
 export async function fetchNote(slug) {
@@ -155,6 +194,10 @@ export async function fetchNote(slug) {
     .eq('slug', slug)
     .single();
   if (error) throw error;
+  
+  const stateMap = await fetchUserNoteStates([data.id]);
+  data.is_pinned = stateMap[data.id]?.is_pinned || false;
+  data.is_archived = stateMap[data.id]?.is_archived || false;
   return parseNote(data);
 }
 
@@ -165,6 +208,10 @@ export async function fetchNoteById(id) {
     .eq('id', id)
     .single();
   if (error) throw error;
+  
+  const stateMap = await fetchUserNoteStates([data.id]);
+  data.is_pinned = stateMap[data.id]?.is_pinned || false;
+  data.is_archived = stateMap[data.id]?.is_archived || false;
   return parseNote(data);
 }
 
@@ -202,10 +249,6 @@ export async function updateNote(id, updates) {
     try { payload.frontmatter = parseFrontmatter(updates.content).data || {}; } catch (_) {}
   }
 
-  if (updates.title && !updates.slug) {
-    // Don't auto-reslug on title edits to avoid breaking backlinks
-  }
-
   const { data, error } = await supabase
     .from('notes')
     .update(payload)
@@ -213,6 +256,12 @@ export async function updateNote(id, updates) {
     .select()
     .single();
   if (error) throw error;
+  
+  // Refetch state map so it returns updated data with correctly mapped pins
+  const stateMap = await fetchUserNoteStates([data.id]);
+  data.is_pinned = stateMap[data.id]?.is_pinned || false;
+  data.is_archived = stateMap[data.id]?.is_archived || false;
+  
   return parseNote(data);
 }
 
@@ -222,11 +271,45 @@ export async function deleteNote(id) {
 }
 
 export async function togglePin(id, isPinned) {
-  return updateNote(id, { is_pinned: !isPinned });
+  const { data: user } = await supabase.auth.getUser();
+  if (!user?.user) throw new Error('Not authenticated');
+
+  const note = await fetchNoteById(id);
+
+  const { data, error } = await supabase
+    .from('user_note_states')
+    .upsert({
+      user_id: user.user.id,
+      note_id: id,
+      is_pinned: !isPinned,
+      is_archived: note.is_archived || false
+    }, { onConflict: 'user_id, note_id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { ...note, is_pinned: data.is_pinned, is_archived: data.is_archived };
 }
 
 export async function toggleArchive(id, isArchived) {
-  return updateNote(id, { is_archived: !isArchived });
+  const { data: user } = await supabase.auth.getUser();
+  if (!user?.user) throw new Error('Not authenticated');
+
+  const note = await fetchNoteById(id);
+
+  const { data, error } = await supabase
+    .from('user_note_states')
+    .upsert({
+      user_id: user.user.id,
+      note_id: id,
+      is_pinned: note.is_pinned || false,
+      is_archived: !isArchived
+    }, { onConflict: 'user_id, note_id' })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { ...note, is_pinned: data.is_pinned, is_archived: data.is_archived };
 }
 
 // ─── Images API ───────────────────────────────────────────────────────────────

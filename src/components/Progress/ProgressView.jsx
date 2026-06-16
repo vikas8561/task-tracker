@@ -16,19 +16,15 @@ function SubjectProgressCard({ subject, chapters }) {
       <div className="subject-progress-header" onClick={() => setExpanded((v) => !v)}>
         <div className="subject-name-row">
           <div className="subject-color-bar" style={{ background: color }} />
-          <div>
-            <h4 style={{ color: 'var(--text-primary)' }}>{subject.name}</h4>
-            <p style={{ fontSize: '0.78rem' }}>
+          <div className="subject-progress-info">
+            <h4 className="subject-name">{subject.name}</h4>
+            <p className="subject-task-count">
               {subject.completed} / {subject.total} tasks completed
             </p>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{
-            fontSize: '1.4rem',
-            fontWeight: 800,
-            color
-          }}>
+        <div className="subject-progress-stats">
+          <span className="subject-percent" style={{ color }}>
             {subject.percentage}%
           </span>
           {expanded ? <ChevronDown size={16} color="var(--text-muted)" /> : <ChevronRight size={16} color="var(--text-muted)" />}
@@ -42,10 +38,10 @@ function SubjectProgressCard({ subject, chapters }) {
           {subjectChapters.map((ch) => (
             <div key={ch.id} className="chapter-progress-row">
               <div className="chapter-progress-meta">
-                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                <span className="chapter-progress-name">
                   {ch.name}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <span className="chapter-progress-stats">
                   {ch.completed}/{ch.total} ({ch.percentage}%)
                 </span>
               </div>
@@ -56,7 +52,7 @@ function SubjectProgressCard({ subject, chapters }) {
       )}
 
       {expanded && subjectChapters.length === 0 && (
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center' }}>
+        <p className="chapter-progress-empty">
           No chapters found
         </p>
       )}
@@ -99,34 +95,14 @@ export default function ProgressView() {
   }
 
   return (
-    <div className="fade-in">
-      <div className="page-header slide-down" style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
-        background: 'var(--bg-secondary)',
-        padding: '24px 32px',
-        borderRadius: '16px',
-        border: '1px solid var(--border-glass)',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-        marginBottom: '32px'
-      }}>
-        <div style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '16px',
-          background: 'var(--accent-1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          boxShadow: '0 4px 12px var(--accent-1-soft)'
-        }}>
+    <div className="progress-page fade-in">
+      <div className="page-header progress-page-header slide-down">
+        <div className="progress-page-icon">
           <TrendingUp size={28} />
         </div>
-        <div>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px', marginTop: 0 }}>Progress</h2>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Track your study progress across all subjects and chapters.</p>
+        <div className="progress-page-text">
+          <h2 className="progress-page-title">Progress</h2>
+          <p className="progress-page-desc">Track your study progress across all subjects and chapters.</p>
         </div>
       </div>
 
@@ -134,13 +110,13 @@ export default function ProgressView() {
       <div className="card-3d overall-progress-card slide-up">
         <div className="overall-progress-content">
           <div className="overall-progress-header">
-            <div>
-              <h3 style={{ color: 'var(--text-primary)', marginBottom: '4px' }}>Platform-wide Progress</h3>
-              <p style={{ fontSize: '0.85rem' }}>
+            <div className="overall-progress-info">
+              <h3 className="overall-progress-title">Platform-wide Progress</h3>
+              <p className="overall-progress-desc">
                 {overall?.completedTasks ?? 0} of {overall?.totalTasks ?? 0} total tasks completed
               </p>
             </div>
-            <span className="overall-percent" style={{ color: 'var(--accent-1)', fontWeight: 'bold' }}>{overall?.overallProgress ?? 0}%</span>
+            <span className="overall-percent">{overall?.overallProgress ?? 0}%</span>
           </div>
           <ProgressBar value={overall?.overallProgress ?? 0} size="lg" />
         </div>
@@ -155,13 +131,13 @@ export default function ProgressView() {
         />
       ) : (
         <>
-          <div className="section-header">
+          <div className="section-header progress-section-header">
             <h3>By Subject</h3>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <span className="section-header-meta">
               {subjects.length} subject{subjects.length !== 1 ? 's' : ''}
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div className="subject-progress-list">
             {subjects.map((s, i) => (
               <div key={s.id} style={{ animationDelay: `${i * 50}ms` }}>
                 <SubjectProgressCard subject={s} chapters={chapters} />

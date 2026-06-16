@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, CheckSquare, TrendingUp, BookMarked, Zap, LogOut, FileText, Search, Plus, Menu } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', id: 'nav-dashboard' },
@@ -21,6 +22,7 @@ export default function TopNav({
 }) {
   const location = useLocation();
   const isTasksPage = location.pathname === '/tasks';
+  const { isAdmin } = useAuth();
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -67,21 +69,25 @@ export default function TopNav({
                     id="topnav-search-input"
                   />
                 </div>
-                <button
-                  className="btn btn-secondary top-nav-import-btn"
-                  onClick={onImportClick}
-                  id="topnav-import-md-btn"
-                >
-                  Import MD
-                </button>
-                <button
-                  className="btn btn-primary top-nav-add-btn"
-                  onClick={onAddTask}
-                  id="topnav-add-task-btn"
-                >
-                  <Plus size={16} />
-                  <span className="top-nav-add-label">New Task</span>
-                </button>
+                {isAdmin && (
+                  <>
+                    <button
+                      className="btn btn-secondary top-nav-import-btn"
+                      onClick={onImportClick}
+                      id="topnav-import-md-btn"
+                    >
+                      Import MD
+                    </button>
+                    <button
+                      className="btn btn-primary top-nav-add-btn"
+                      onClick={onAddTask}
+                      id="topnav-add-task-btn"
+                    >
+                      <Plus size={16} />
+                      <span className="top-nav-add-label">New Task</span>
+                    </button>
+                  </>
+                )}
               </div>
             )}
             <button
@@ -141,12 +147,16 @@ export default function TopNav({
                 aria-label="Search tasks"
               />
             </div>
-            <button className="btn btn-secondary w-full" onClick={() => { onImportClick(); onClose(); }}>
-              Import MD
-            </button>
-            <button className="btn btn-primary w-full" onClick={() => { onAddTask(); onClose(); }}>
-              <Plus size={16} /> New Task
-            </button>
+            {isAdmin && (
+              <>
+                <button className="btn btn-secondary w-full" onClick={() => { onImportClick(); onClose(); }}>
+                  Import MD
+                </button>
+                <button className="btn btn-primary w-full" onClick={() => { onAddTask(); onClose(); }}>
+                  <Plus size={16} /> New Task
+                </button>
+              </>
+            )}
           </div>
         )}
 

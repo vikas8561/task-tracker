@@ -393,39 +393,54 @@
     line-height: 1.5;
   }
 
-  /* Name prompt — match auth mobile sizing */
+  /* Name prompt — proper mobile bottom sheet */
   .name-prompt-overlay {
     align-items: flex-end;
-    padding:
-      max(var(--space-3), env(safe-area-inset-top))
-      max(var(--space-3), env(safe-area-inset-right))
-      max(var(--space-3), env(safe-area-inset-bottom))
-      max(var(--space-3), env(safe-area-inset-left));
+    padding: 0; /* flush with edges */
   }
 
   .name-prompt-card {
     max-width: none;
-    padding: var(--space-6) var(--space-5) max(var(--space-6), env(safe-area-inset-bottom));
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    width: 100%;
+    margin: 0;
+    padding: var(--space-8) var(--space-6) max(var(--space-8), env(safe-area-inset-bottom));
+    border-radius: 24px 24px 0 0; /* large rounded top corners */
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
   }
 
   .name-prompt-icon {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+  }
+
+  .name-prompt-header {
+    margin-bottom: var(--space-5);
   }
 
   .name-prompt-header h2 {
-    font-size: 1.45rem;
+    font-size: 1.5rem;
   }
 
   .name-prompt-header p {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .name-prompt-form {
+    gap: var(--space-3);
   }
 
   .name-prompt-form .input-with-icon .form-input {
-    height: 52px;
-    font-size: 16px;
+    height: 56px; /* slightly taller for thumb reach */
+    font-size: 16px; /* prevents iOS zoom */
+  }
+  
+  .name-prompt-form .auth-submit-btn {
+    height: 56px;
+    font-size: 1.05rem;
+    margin-top: var(--space-2);
   }
 }
 

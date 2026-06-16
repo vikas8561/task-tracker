@@ -3,6 +3,7 @@ import Badge from '../common/Badge';
 import { toggleComplete, toggleRevision } from '../../hooks/useTasks';
 import { normalizeSubjectColor } from '../../utils/subjectColor';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
@@ -17,6 +18,8 @@ function isOverdue(dateStr) {
 }
 
 export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
+  const { isAdmin } = useAuth();
+
   async function handleToggleComplete() {
     try {
       const updated = await toggleComplete(task);
@@ -70,8 +73,8 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
           
           {task.chapters && (
             <>
-              <ChevronRight size={14} className="breadcrumb-separator" />
-              <span className="breadcrumb-item">
+              <ChevronRight size={14} className="breadcrumb-separator breadcrumb-separator--chapter" />
+              <span className="breadcrumb-item breadcrumb-item--chapter">
                 {task.chapters.name}
               </span>
             </>
@@ -79,8 +82,8 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
 
           {task.topics && task.topics.name !== task.title && (
              <>
-               <ChevronRight size={14} className="breadcrumb-separator" />
-               <span className="breadcrumb-item">
+               <ChevronRight size={14} className="breadcrumb-separator breadcrumb-separator--topic" />
+               <span className="breadcrumb-item breadcrumb-item--topic">
                  {task.topics.name}
                </span>
              </>
@@ -88,8 +91,8 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
 
           {task.sub_topics && task.sub_topics.name !== task.title && (
              <>
-               <ChevronRight size={14} className="breadcrumb-separator" />
-               <span className="breadcrumb-item">
+               <ChevronRight size={14} className="breadcrumb-separator breadcrumb-separator--subtopic" />
+               <span className="breadcrumb-item breadcrumb-item--subtopic">
                  {task.sub_topics.name}
                </span>
              </>
@@ -130,20 +133,24 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
         >
           <BookMarked size={18} fill={task.is_revision ? 'currentColor' : 'none'} />
         </button>
-        <button
-          className="btn btn-ghost btn-icon htv-action-btn"
-          onClick={() => onEdit(task)}
-          aria-label="Edit Task"
-        >
-          <Edit2 size={18} />
-        </button>
-        <button
-          className="btn btn-ghost btn-icon htv-action-btn htv-action-delete"
-          onClick={() => onDelete(task)}
-          aria-label="Delete Task"
-        >
-          <Trash2 size={18} />
-        </button>
+        {isAdmin && (
+          <>
+            <button
+              className="btn btn-ghost btn-icon htv-action-btn"
+              onClick={() => onEdit(task)}
+              aria-label="Edit Task"
+            >
+              <Edit2 size={18} />
+            </button>
+            <button
+              className="btn btn-ghost btn-icon htv-action-btn htv-action-delete"
+              onClick={() => onDelete(task)}
+              aria-label="Delete Task"
+            >
+              <Trash2 size={18} />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
