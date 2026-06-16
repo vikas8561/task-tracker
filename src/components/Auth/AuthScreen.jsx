@@ -50,7 +50,7 @@ export default function AuthScreen() {
             <div className="auth-logo">
               <CheckSquare size={32} className="auth-logo-icon" />
             </div>
-            <h1 className="auth-title">TaskTrack</h1>
+            <h1 className="auth-title">Taskabelle</h1>
             <p className="auth-subtitle">
               {isLogin ? 'Welcome back' : 'Start your journey'}
             </p>

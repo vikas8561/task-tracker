@@ -540,7 +540,7 @@ export default function CustomDropdown({
 }
 
 const COLORS = [
-  '#0f766e','#8b5cf6','#06b6d4','#10b981',
-  '#f59e0b','#ef4444','#ec4899','#14b8a6',
-  '#f97316','#84cc16',
+  '#ff3366','#ffaa00','#00e5a0','#ff6b35',
+  '#0f766e','#f43f5e','#14b8a6','#f59e0b',
+  '#ef4444','#10b981',
 ];

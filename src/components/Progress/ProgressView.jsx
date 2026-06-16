@@ -10,17 +10,7 @@ function SubjectProgressCard({ subject, chapters }) {
   const subjectChapters = chapters.filter((c) => c.subjectId === subject.id);
 
   return (
-    <div
-      className="card-3d subject-progress-card slide-up"
-      style={{
-        background: '#ffffff',
-        border: '1px solid rgba(0,0,0,0.06)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-        borderRadius: '12px',
-        position: 'relative',
-        overflow: 'hidden'
-      }}
-    >
+    <div className="card-3d subject-progress-card slide-up">
       <div className="subject-progress-header" onClick={() => setExpanded((v) => !v)}>
         <div className="subject-name-row">
           <div className="subject-color-bar" style={{ background: subject.color }} />
@@ -112,23 +102,23 @@ export default function ProgressView() {
         display: 'flex',
         alignItems: 'center',
         gap: '20px',
-        background: '#ffffff',
+        background: 'var(--bg-secondary)',
         padding: '24px 32px',
         borderRadius: '16px',
-        border: '1px solid rgba(0,0,0,0.06)',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+        border: '1px solid var(--border-glass)',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         marginBottom: '32px'
       }}>
         <div style={{
           width: '56px',
           height: '56px',
           borderRadius: '16px',
-          background: 'var(--grad-nav-btn)',
+          background: 'var(--accent-1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
-          boxShadow: '0 4px 12px rgba(228, 15, 68, 0.2)'
+          boxShadow: '0 4px 12px var(--accent-1-soft)'
         }}>
           <TrendingUp size={28} />
         </div>
@@ -139,7 +129,7 @@ export default function ProgressView() {
       </div>
 
       {/* Overall */}
-      <div className="card-3d overall-progress-card slide-up" style={{ background: "#ffffff", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+      <div className="card-3d overall-progress-card slide-up">
         <div className="overall-progress-content">
           <div className="overall-progress-header">
             <div>

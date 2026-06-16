@@ -9,6 +9,7 @@ import RevisionView from './components/Revision/RevisionView';
 import MarkdownImport from './components/Tasks/MarkdownImport';
 import TaskForm from './components/Tasks/TaskForm';
 import AuthScreen from './components/Auth/AuthScreen';
+import NotesView from './components/Notes/NotesView';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -51,6 +52,8 @@ function PrivateApp() {
           />
           <Route path="/progress" element={<ProgressView />} />
           <Route path="/revision" element={<RevisionView searchQuery={searchQuery} />} />
+          <Route path="/notes" element={<NotesView />} />
+          <Route path="/notes/:slug" element={<NotesView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

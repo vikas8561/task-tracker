@@ -88,23 +88,23 @@ export default function RevisionView({ searchQuery }) {
         display: 'flex',
         alignItems: 'center',
         gap: '20px',
-        background: '#ffffff',
+        background: 'var(--bg-secondary)',
         padding: '24px 32px',
         borderRadius: '16px',
-        border: '1px solid rgba(0,0,0,0.06)',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+        border: '1px solid var(--border-glass)',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         marginBottom: '32px'
       }}>
         <div style={{
           width: '56px',
           height: '56px',
           borderRadius: '16px',
-          background: 'var(--grad-stat-2)',
+          background: 'var(--warning)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
-          boxShadow: '0 4px 12px rgba(76, 29, 149, 0.2)'
+          boxShadow: '0 4px 12px var(--warning-soft)'
         }}>
           <BookMarked size={28} />
         </div>

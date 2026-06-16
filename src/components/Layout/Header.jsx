@@ -6,11 +6,12 @@ const titles = {
   '/tasks': 'My Tasks',
   '/progress': 'Progress',
   '/revision': 'Revision',
+  '/notes': 'Notes',
 };
 
 export default function Header({ onMenuToggle, onAddTask, onImportClick, searchQuery, onSearchChange }) {
   const location = useLocation();
-  const title = titles[location.pathname] || 'StudyTrack';
+  const title = titles[location.pathname] || 'Taskabelle';
 
   return (
     <header className="header">

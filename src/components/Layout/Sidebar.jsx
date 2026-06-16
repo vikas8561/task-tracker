@@ -1,16 +1,16 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, TrendingUp, BookMarked, Zap, LogOut } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, TrendingUp, BookMarked, Zap, LogOut, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', id: 'nav-dashboard' },
   { to: '/tasks', icon: CheckSquare, label: 'Tasks', id: 'nav-tasks' },
   { to: '/progress', icon: TrendingUp, label: 'Progress', id: 'nav-progress' },
   { to: '/revision', icon: BookMarked, label: 'Revision', id: 'nav-revision' },
+  { to: '/notes', icon: FileText, label: 'Notes', id: 'nav-notes' },
 ];
 
-import { supabase } from '../../lib/supabase';
-
-export default function Sidebar({ mobileOpen, onClose }) {
+export default function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollapse }) {
   const location = useLocation();
 
   async function handleLogout() {
@@ -20,16 +20,28 @@ export default function Sidebar({ mobileOpen, onClose }) {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''} ${collapsed ? 'sidebar-collapsed' : ''}`}>
+        {/* Logo row + collapse toggle */}
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">
             <Zap size={18} color="var(--accent-1)" />
           </div>
-          <span className="sidebar-logo-text">StudyTrack</span>
+          {!collapsed && <span className="sidebar-logo-text">Taskabelle</span>}
+
+          {/* Collapse toggle button — desktop only */}
+          <button
+            className="sidebar-collapse-btn"
+            onClick={onToggleCollapse}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            id="sidebar-collapse-btn"
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
-          <span className="nav-section-label">Menu</span>
+          {!collapsed && <span className="nav-section-label">Menu</span>}
           {navItems.map(({ to, icon: Icon, label, id }) => (
             <NavLink
               key={to}
@@ -38,21 +50,22 @@ export default function Sidebar({ mobileOpen, onClose }) {
               className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
               end={to === '/'}
               onClick={onClose}
+              title={collapsed ? label : undefined}
             >
               <Icon size={18} className="nav-link-icon" />
-              <span>{label}</span>
+              {!collapsed && <span>{label}</span>}
             </NavLink>
           ))}
         </nav>
 
-        <div style={{ marginTop: 'auto', padding: 'var(--space-4) var(--space-5)', borderTop: '1px solid var(--border-glass)' }}>
-          <button 
-            onClick={handleLogout} 
-            className="btn btn-ghost" 
-            style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger)' }}
+        <div className="sidebar-footer">
+          <button
+            onClick={handleLogout}
+            className="btn btn-ghost sidebar-logout-btn"
+            title={collapsed ? 'Sign Out' : undefined}
           >
-            <LogOut size={16} style={{ marginRight: 'var(--space-2)' }} />
-            Sign Out
+            <LogOut size={16} />
+            {!collapsed && <span style={{ marginLeft: 'var(--space-2)' }}>Sign Out</span>}
           </button>
         </div>
       </aside>
@@ -60,7 +73,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(255,255,255,0.7)', zIndex: 99, backdropFilter: 'blur(2px)' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 99, backdropFilter: 'blur(2px)' }}
           onClick={onClose}
         />
       )}

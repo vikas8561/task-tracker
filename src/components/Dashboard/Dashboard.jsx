@@ -74,33 +74,16 @@ export default function Dashboard() {
     <div className="fade-in" style={{ position: 'relative', zIndex: 1 }}>
       <div className="dashboard-3d-bg"></div>
       {/* Page Header */}
-      <div className="page-header slide-down" style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
-        background: '#ffffff',
-        padding: '24px 32px',
-        borderRadius: '16px',
-        border: '1px solid rgba(0,0,0,0.06)',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-        marginBottom: '32px'
-      }}>
-        <div style={{
-          width: '56px',
-          height: '56px',
-          borderRadius: '16px',
-          background: 'var(--grad-stat-1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '28px',
-          boxShadow: '0 4px 12px rgba(30, 58, 138, 0.2)'
+      <div className="page-header-banner slide-down">
+        <div className="header-icon-badge emoji-badge" style={{
+          background: 'var(--accent-grad-soft)',
+          fontSize: '28px'
         }}>
           👋
         </div>
-        <div>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', marginBottom: '4px', marginTop: 0 }}>Welcome back!</h2>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Here's an overview of your study progress.</p>
+        <div className="header-text-container">
+          <h2>Welcome back!</h2>
+          <p>Here's an overview of your study progress.</p>
         </div>
       </div>
 

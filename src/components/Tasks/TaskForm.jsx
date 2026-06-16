@@ -183,7 +183,7 @@ export default function TaskForm({ isOpen, onClose, onSaved, editTask }) {
               </div>
             ))}
           </div>
-          <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '0 -32px 4px' }} />
+          <div style={{ height: 1, background: 'var(--border-glass)', margin: '0 -32px 4px' }} />
         </div>
       )}
 
@@ -250,7 +250,7 @@ export default function TaskForm({ isOpen, onClose, onSaved, editTask }) {
           <p className="tf-step-label" style={{ marginTop: 16 }}>Add sub-topics</p>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.5 }}>
             Type each sub-topic name and press{' '}
-            <kbd style={{ fontSize: '0.72rem', padding: '2px 6px', background: 'rgba(0,0,0,0.1)', borderRadius: 4, fontFamily: 'inherit' }}>Enter</kbd>.
+            <kbd style={{ fontSize: '0.72rem', padding: '2px 6px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-glass)', borderRadius: 4, fontFamily: 'inherit' }}>Enter</kbd>.
             {' '}One task will be created per sub-topic.
           </p>
           <SubTopicSelector
@@ -339,7 +339,7 @@ export default function TaskForm({ isOpen, onClose, onSaved, editTask }) {
       )}
 
       {/* ── Footer navigation ─────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid rgba(0,0,0,0.06)', marginTop: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border-glass)', marginTop: 4 }}>
         <button
           className="btn btn-secondary"
           onClick={editTask ? handleClose : goPrev}
@@ -388,7 +388,7 @@ function Breadcrumb({ parts }) {
       display: 'flex', alignItems: 'center', gap: 6,
       fontSize: '0.75rem', color: 'var(--text-muted)',
       padding: '7px 10px',
-      background: 'rgba(0,0,0,0.04)',
+      background: 'rgba(255,255,255,0.04)',
       borderRadius: 'var(--radius-sm)',
       flexWrap: 'wrap',
     }}>

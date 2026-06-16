@@ -15,15 +15,6 @@ function isOverdue(dateStr) {
   return dateStr < today;
 }
 
-// Helper to convert hex to rgba for soft backgrounds
-function hexToRgba(hex, alpha = 0.1) {
-  if (!hex || !hex.startsWith('#')) return `rgba(139, 92, 246, ${alpha})`; // fallback amethyst
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
   async function handleToggleComplete() {
     try {
@@ -46,18 +37,12 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
 
   const overdue = isOverdue(task.due_date) && !task.is_completed;
   
-  // Calculate dynamic colors
-  const subColor = task.subjects?.color || '#8b5cf6';
-  const softBg = hexToRgba(subColor, 0.08);
-  const glowShadow = `0 8px 24px ${hexToRgba(subColor, 0.2)}`;
+  const subColor = task.subjects?.color || 'var(--accent-1)';
 
   return (
     <div 
-      className={`task-card ${task.is_completed ? 'completed' : ''} slide-up`}
-      style={{ 
-        '--subject-color': subColor,
-        background: task.is_completed ? '#f8fafc' : '#ffffff'
-      }}
+      className={`task-card ${task.is_completed ? 'completed' : ''}`}
+      style={{ '--subject-color': subColor }}
     >
       {/* Checkbox */}
       <button
@@ -65,33 +50,24 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
         onClick={handleToggleComplete}
         aria-label={task.is_completed ? 'Mark incomplete' : 'Mark complete'}
         id={`task-check-${task.id}`}
-        style={{
-          width: '28px', height: '28px', borderRadius: '50%',
-          border: task.is_completed ? 'none' : `2px solid ${subColor}`,
-          background: task.is_completed ? subColor : 'transparent',
-          boxShadow: task.is_completed ? glowShadow : 'none',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', transition: 'all 0.2s',
-          marginTop: '4px', flexShrink: 0
-        }}
       >
         {task.is_completed && <Check size={16} color="white" strokeWidth={3} />}
       </button>
 
       {/* Content */}
-      <div className="task-content" style={{ flex: 1 }}>
+      <div className="task-content">
         {/* Colorful Hierarchy Badges */}
         <div className="task-breadcrumb">
           {task.subjects && (
-            <span className="colorful-badge" style={{ background: softBg, color: subColor, boxShadow: glowShadow }}>
+            <span className="breadcrumb-subject" style={{ '--subject-color': subColor }}>
               {task.subjects.name}
             </span>
           )}
           
           {task.chapters && (
             <>
-              <ChevronRight size={14} style={{ color: 'rgba(0,0,0,0.2)' }} />
-              <span className="colorful-badge" style={{ background: '#f1f5f9', color: '#475569' }}>
+              <ChevronRight size={14} className="breadcrumb-separator" />
+              <span className="breadcrumb-item">
                 {task.chapters.name}
               </span>
             </>
@@ -99,8 +75,8 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
 
           {task.topics && task.topics.name !== task.title && (
              <>
-               <ChevronRight size={14} style={{ color: 'rgba(0,0,0,0.2)' }} />
-               <span className="colorful-badge" style={{ background: '#f1f5f9', color: '#64748b', fontWeight: 500 }}>
+               <ChevronRight size={14} className="breadcrumb-separator" />
+               <span className="breadcrumb-item">
                  {task.topics.name}
                </span>
              </>
@@ -108,8 +84,8 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
 
           {task.sub_topics && task.sub_topics.name !== task.title && (
              <>
-               <ChevronRight size={14} style={{ color: 'rgba(0,0,0,0.2)' }} />
-               <span className="colorful-badge" style={{ background: '#f8fafc', color: '#94a3b8', fontWeight: 500 }}>
+               <ChevronRight size={14} className="breadcrumb-separator" />
+               <span className="breadcrumb-item">
                  {task.sub_topics.name}
                </span>
              </>
@@ -117,27 +93,22 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
         </div>
 
         {/* Title */}
-        <p className={`task-title ${task.is_completed ? 'completed-text' : ''}`} style={{ fontSize: '1.2rem', fontWeight: 700, color: task.is_completed ? '#94a3b8' : '#0f172a', margin: '0 0 16px 0', textDecoration: 'none' }}>
+        <p className={`task-title ${task.is_completed ? 'completed-text' : ''}`}>
           {task.title}
         </p>
 
         {/* Meta */}
-        <div className="task-meta" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="task-meta">
           {task.priority && (
-            <span className="colorful-badge" style={{ 
-              background: task.priority === 'high' ? '#fee2e2' : task.priority === 'medium' ? '#fef3c7' : '#e0f2fe',
-              color: task.priority === 'high' ? '#ef4444' : task.priority === 'medium' ? '#f59e0b' : '#3b82f6'
-            }}>
-              {task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🔵'} {task.priority.toUpperCase()}
-            </span>
+            <Badge type={task.priority}>
+              {task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'} {task.priority}
+            </Badge>
           )}
           {task.is_revision && (
-             <span className="colorful-badge" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white', boxShadow: '0 4px 10px rgba(236, 72, 153, 0.3)' }}>
-               📖 REVISION
-             </span>
+             <Badge type="revision">📖 Revision</Badge>
           )}
           {task.due_date && (
-            <span className="colorful-badge" style={{ background: overdue ? '#fee2e2' : '#f1f5f9', color: overdue ? '#ef4444' : '#64748b' }}>
+            <span className={`task-due ${overdue ? 'overdue' : ''}`}>
               <Calendar size={12} />
               {overdue ? '⚠ ' : ''}{formatDate(task.due_date)}
             </span>
@@ -146,28 +117,26 @@ export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
       </div>
 
       {/* Actions */}
-      <div className="task-actions" style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+      <div className="task-actions">
         <button
-          className="action-btn"
+          className="btn btn-ghost btn-icon htv-action-btn"
+          style={{ color: task.is_revision ? 'var(--revision)' : '' }}
           onClick={handleToggleRevision}
           aria-label="Toggle Revision"
-          style={{ width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: task.is_revision ? '#fdf2f8' : 'transparent', color: task.is_revision ? '#ec4899' : '#94a3b8', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
         >
           <BookMarked size={18} fill={task.is_revision ? 'currentColor' : 'none'} />
         </button>
         <button
-          className="action-btn"
+          className="btn btn-ghost btn-icon htv-action-btn"
           onClick={() => onEdit(task)}
           aria-label="Edit Task"
-          style={{ width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', color: '#64748b', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
         >
           <Edit2 size={18} />
         </button>
         <button
-          className="action-btn"
+          className="btn btn-ghost btn-icon htv-action-btn htv-action-delete"
           onClick={() => onDelete(task)}
           aria-label="Delete Task"
-          style={{ width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', color: '#ef4444', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}
         >
           <Trash2 size={18} />
         </button>
