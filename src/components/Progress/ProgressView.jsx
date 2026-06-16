@@ -5,6 +5,7 @@ import { fetchDashboardStats, fetchProgressBySubject, fetchProgressByChapter } f
 import { normalizeSubjectColor } from '../../utils/subjectColor';
 import { TrendingUp, ChevronDown, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ProgressLineChart from './ProgressLineChart';
 
 function SubjectProgressCard({ subject, chapters }) {
   const [expanded, setExpanded] = useState(false);
@@ -120,6 +121,11 @@ export default function ProgressView() {
           </div>
           <ProgressBar value={overall?.overallProgress ?? 0} size="lg" />
         </div>
+      </div>
+
+      {/* Completion Trends Chart */}
+      <div className="progress-section-container slide-up" style={{ marginTop: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+        <ProgressLineChart completedTimestamps={overall?.completedTimestamps ?? []} />
       </div>
 
       {/* Subject breakdown */}
