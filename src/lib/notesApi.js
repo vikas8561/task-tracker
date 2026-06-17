@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getCurrentUser } from './localAuth';
 import GithubSlugger from 'github-slugger';
 
 const slugger = new GithubSlugger();
@@ -114,13 +115,13 @@ export async function deleteFolder(id) {
 
 async function fetchUserNoteStates(noteIds) {
   if (!noteIds || noteIds.length === 0) return {};
-  const { data: user } = await supabase.auth.getUser();
-  if (!user?.user) return {};
+  const user = getCurrentUser();
+  if (!user) return {};
 
   const { data, error } = await supabase
     .from('user_note_states')
     .select('*')
-    .eq('user_id', user.user.id)
+    .eq('user_id', user.id)
     .in('note_id', noteIds);
 
   if (error) return {};
@@ -271,15 +272,15 @@ export async function deleteNote(id) {
 }
 
 export async function togglePin(id, isPinned) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user?.user) throw new Error('Not authenticated');
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
 
   const note = await fetchNoteById(id);
 
   const { data, error } = await supabase
     .from('user_note_states')
     .upsert({
-      user_id: user.user.id,
+      user_id: user.id,
       note_id: id,
       is_pinned: !isPinned,
       is_archived: note.is_archived || false
@@ -292,15 +293,15 @@ export async function togglePin(id, isPinned) {
 }
 
 export async function toggleArchive(id, isArchived) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user?.user) throw new Error('Not authenticated');
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
 
   const note = await fetchNoteById(id);
 
   const { data, error } = await supabase
     .from('user_note_states')
     .upsert({
-      user_id: user.user.id,
+      user_id: user.id,
       note_id: id,
       is_pinned: note.is_pinned || false,
       is_archived: !isArchived
@@ -315,12 +316,12 @@ export async function toggleArchive(id, isArchived) {
 // ─── Images API ───────────────────────────────────────────────────────────────
 
 export async function uploadNoteImage(file, noteId = null) {
-  const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) throw new Error('Not authenticated');
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
 
   const ext = file.name.split('.').pop();
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const storagePath = `${userId}/${filename}`;
+  const storagePath = `${user.id}/${filename}`;
 
   const { error: uploadError } = await supabase.storage
     .from('note-images')

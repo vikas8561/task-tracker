@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getDisplayName, needsDisplayName as userNeedsDisplayName } from '../utils/userProfile';
+import * as localAuth from '../lib/localAuth';
 
 const AuthContext = createContext({
   user: null,
@@ -10,6 +10,9 @@ const AuthContext = createContext({
   needsDisplayName: false,
   saveDisplayName: async () => {},
   isAdmin: false,
+  signIn: async () => {},
+  signUp: async () => {},
+  signOut: () => {},
 });
 
 export function AuthProvider({ children }) {
@@ -19,74 +22,75 @@ export function AuthProvider({ children }) {
 
   const displayName = useMemo(() => getDisplayName(user), [user]);
   const needsDisplayName = useMemo(() => userNeedsDisplayName(user), [user]);
-  const isAdmin = useMemo(() => user?.email === 'vikas12252@gmail.com', [user]);
+  const isAdmin = useMemo(() => user?.is_admin || user?.email === 'vikas12252@gmail.com', [user]);
 
+  // Initialize from local storage — instant, no network call!
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      setLoading(false);
-      return;
+    const currentSession = localAuth.getCurrentSession();
+    if (currentSession?.user) {
+      setSession(currentSession);
+      setUser(currentSession.user);
     }
+    // Loading is done immediately — no waiting for network
+    setLoading(false);
 
-    let settled = false;
-
-    // Safety timeout — if Supabase never responds (paused project,
-    // network issue, rate limit), stop the loading screen after 8 s
-    // so the user isn't stuck indefinitely.
-    const safetyTimer = setTimeout(() => {
-      if (!settled) {
-        console.warn('[Auth] getSession timed out — proceeding without session');
-        settled = true;
-        setLoading(false);
-      }
-    }, 8000);
-
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!settled) {
-        settled = true;
-        clearTimeout(safetyTimer);
-        if (error) console.error('Supabase auth error:', error);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    }).catch(err => {
-      if (!settled) {
-        settled = true;
-        clearTimeout(safetyTimer);
-        console.error('Failed to get session:', err);
-        setLoading(false);
-      }
+    // Listen for cross-tab changes
+    const { unsubscribe } = localAuth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => {
-      clearTimeout(safetyTimer);
-      subscription.unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
+
+  async function handleSignIn(email, password) {
+    const result = await localAuth.signIn(email, password);
+    if (result.error) throw result.error;
+    setSession(result.session);
+    setUser(result.user);
+    return result;
+  }
+
+  async function handleSignUp(email, password) {
+    const result = await localAuth.signUp(email, password);
+    if (result.error) throw result.error;
+    setSession(result.session);
+    setUser(result.user);
+    return result;
+  }
+
+  function handleSignOut() {
+    localAuth.signOut();
+    setSession(null);
+    setUser(null);
+  }
 
   async function saveDisplayName(name) {
     const trimmed = name.trim();
     if (!trimmed) throw new Error('Name is required');
 
-    const { data, error } = await supabase.auth.updateUser({
+    const result = await localAuth.updateUser({
       data: { display_name: trimmed },
     });
 
-    if (error) throw error;
-    setUser(data.user);
-    return data.user;
+    if (result.error) throw result.error;
+    setUser(result.data.user);
+    return result.data.user;
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, displayName, needsDisplayName, saveDisplayName, isAdmin }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      loading,
+      displayName,
+      needsDisplayName,
+      saveDisplayName,
+      isAdmin,
+      signIn: handleSignIn,
+      signUp: handleSignUp,
+      signOut: handleSignOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

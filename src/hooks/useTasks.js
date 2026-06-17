@@ -1,16 +1,17 @@
 import { supabase } from '../lib/supabase';
+import { getCurrentUser } from '../lib/localAuth';
 
 
 // Helper to fetch user states
 async function fetchUserTaskStates(taskIds) {
   if (!taskIds || taskIds.length === 0) return {};
-  const { data: user } = await supabase.auth.getUser();
-  if (!user?.user) return {};
+  const user = getCurrentUser();
+  if (!user) return {};
 
   const { data, error } = await supabase
     .from('user_task_states')
     .select('*')
-    .eq('user_id', user.user.id)
+    .eq('user_id', user.id)
     .in('task_id', taskIds);
 
   if (error) return {};
@@ -125,8 +126,8 @@ export async function deleteTask(id) {
 }
 
 export async function toggleComplete(task) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user?.user) throw new Error('Not authenticated');
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
 
   const nowCompleted = !task.is_completed;
   const completedAt = nowCompleted ? new Date().toISOString() : null;
@@ -134,7 +135,7 @@ export async function toggleComplete(task) {
   const { data, error } = await supabase
     .from('user_task_states')
     .upsert({
-      user_id: user.user.id,
+      user_id: user.id,
       task_id: task.id,
       is_completed: nowCompleted,
       completed_at: completedAt,
@@ -153,15 +154,15 @@ export async function toggleComplete(task) {
 }
 
 export async function toggleRevision(task) {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user?.user) throw new Error('Not authenticated');
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
 
   const nowRevision = !task.is_revision;
 
   const { data, error } = await supabase
     .from('user_task_states')
     .upsert({
-      user_id: user.user.id,
+      user_id: user.id,
       task_id: task.id,
       is_completed: task.is_completed || false,
       completed_at: task.completed_at || null,
@@ -180,13 +181,13 @@ export async function toggleRevision(task) {
 }
 
 export async function fetchAllCompletedTimestamps() {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user?.user) return [];
+  const user = getCurrentUser();
+  if (!user) return [];
 
   const { data, error } = await supabase
     .from('user_task_states')
     .select('completed_at')
-    .eq('user_id', user.user.id)
+    .eq('user_id', user.id)
     .eq('is_completed', true)
     .not('completed_at', 'is', null);
 

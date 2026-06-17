@@ -1,6 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutGrid, ListTodo, Flame, BookOpenCheck, NotebookPen, Zap, LogOut, Search, Plus, Menu } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
@@ -22,10 +21,10 @@ export default function TopNav({
 }) {
   const location = useLocation();
   const isTasksPage = location.pathname === '/tasks';
-  const { isAdmin } = useAuth();
+  const { isAdmin, signOut } = useAuth();
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
+  function handleLogout() {
+    signOut();
   }
 
   return (

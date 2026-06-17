@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
-import { CheckSquare, Mail, Lock, ArrowRight, MailCheck, ArrowLeft, MessageSquareDashed } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Mail, Lock, ArrowRight, ArrowLeft, MessageSquareDashed, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import './Auth.css';
 
 export default function AuthScreen() {
+  const { signIn, signUp } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSignUpSuccess, setIsSignUpSuccess] = useState(false);
 
   async function handleAuth(e) {
     e.preventDefault();
@@ -21,25 +22,11 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        await signIn(email, password);
         toast.success('Logged in successfully!');
       } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) throw error;
-
-        if (data.user && !data.session) {
-          setIsSignUpSuccess(true);
-          toast.success('Account created! Please verify your email.');
-        } else {
-          toast.success('Account created! You are now logged in.');
-        }
+        await signUp(email, password);
+        toast.success('Account created! You are now logged in.');
       }
     } catch (err) {
       toast.error(err.message || 'Authentication failed');
@@ -61,110 +48,85 @@ export default function AuthScreen() {
         </div>
 
         <div className="auth-card-section">
-          {isSignUpSuccess ? (
-            <div className="auth-card success-card">
-              <div className="success-icon-wrapper">
-                <MailCheck className="success-icon" aria-hidden="true" />
-                <div className="success-sparkle">✨</div>
-              </div>
-              <h2 className="success-title">Check your email</h2>
-              <p className="success-message">
-                We've sent a verification link to <strong>{email}</strong>.<br />
-                Please verify your email to continue.
+          <div className="auth-card">
+            <div className="auth-header">
+              <h1 className="mobile-brand-title">Taskabelle</h1>
+              <h2 className="auth-card-title">
+                {isLogin ? 'Continue Your Progress' : 'Begin Your Success Story'}
+              </h2>
+              <p className="auth-card-subtitle">
+                {isLogin 
+                  ? 'Stay focused and keep moving toward your goals.' 
+                  : 'Build habits, track progress, and achieve more every day.'}
               </p>
+            </div>
+
+            <form onSubmit={handleAuth} className="auth-form">
+              <div className="form-group auth-input-group">
+                <label className="form-label" htmlFor="email">EMAIL</label>
+                <div className="input-with-icon">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="form-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                  />
+                  <Mail size={20} className="input-icon" aria-hidden="true" />
+                </div>
+              </div>
+
+              <div className="form-group auth-input-group">
+                <label className="form-label" htmlFor="password">PASSWORD</label>
+                <div className="input-with-icon">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                    className="form-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                  <Lock size={20} className="input-icon" aria-hidden="true" />
+                </div>
+              </div>
+
               <button
-                onClick={() => {
-                  setIsSignUpSuccess(false);
-                  setIsLogin(true);
-                }}
-                type="button"
-                className="btn btn-ghost return-btn"
+                type="submit"
+                className="btn btn-primary auth-submit-btn"
+                disabled={loading}
               >
-                <ArrowLeft size={16} />
-                <span>Back to sign in</span>
+                <span>{loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}</span>
+                {!loading && <ArrowRight size={20} aria-hidden="true" />}
               </button>
-            </div>
-          ) : (
-            <div className="auth-card">
-              <div className="auth-header">
-                <h1 className="mobile-brand-title">Taskabelle</h1>
-                <h2 className="auth-card-title">
-                  {isLogin ? 'Continue Your Progress' : 'Begin Your Success Story'}
-                </h2>
-                <p className="auth-card-subtitle">
-                  {isLogin 
-                    ? 'Stay focused and keep moving toward your goals.' 
-                    : 'Build habits, track progress, and achieve more every day.'}
-                </p>
-              </div>
+            </form>
 
-              <form onSubmit={handleAuth} className="auth-form">
-                <div className="form-group auth-input-group">
-                  <label className="form-label" htmlFor="email">EMAIL</label>
-                  <div className="input-with-icon">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      className="form-input"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                    />
-                    <Mail size={20} className="input-icon" aria-hidden="true" />
-                  </div>
-                </div>
-
-                <div className="form-group auth-input-group">
-                  <label className="form-label" htmlFor="password">PASSWORD</label>
-                  <div className="input-with-icon">
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete={isLogin ? 'current-password' : 'new-password'}
-                      className="form-input"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      minLength={6}
-                    />
-                    <Lock size={20} className="input-icon" aria-hidden="true" />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary auth-submit-btn"
-                  disabled={loading}
+            <div className="auth-footer">
+              <p className="auth-switch-text">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
+                <span
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="auth-switch-link"
+                  role="button"
+                  tabIndex={0}
                 >
-                  <span>{loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}</span>
-                  {!loading && <ArrowRight size={20} aria-hidden="true" />}
-                </button>
-              </form>
-
-              <div className="auth-footer">
-                <p className="auth-switch-text">
-                  {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
-                  <span
-                    onClick={() => setIsLogin(!isLogin)}
-                    className="auth-switch-link"
-                    role="button"
-                    tabIndex={0}
-                  >
-                    {isLogin ? "Sign up now" : "Sign in"}
-                  </span>
-                </p>
-              </div>
+                  {isLogin ? "Sign up now" : "Sign in"}
+                </span>
+              </p>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
