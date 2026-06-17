@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { CheckSquare, Mail, Lock, ArrowRight } from 'lucide-react';
+import { CheckSquare, Mail, Lock, ArrowRight, MailCheck, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import './Auth.css';
 
@@ -9,6 +9,7 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSignUpSuccess, setIsSignUpSuccess] = useState(false);
 
   async function handleAuth(e) {
     e.preventDefault();
@@ -27,12 +28,18 @@ export default function AuthScreen() {
         if (error) throw error;
         toast.success('Logged in successfully!');
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
-        toast.success('Account created! You are now logged in.');
+        
+        if (data.user && !data.session) {
+          setIsSignUpSuccess(true);
+          toast.success('Account created! Please verify your email.');
+        } else {
+          toast.success('Account created! You are now logged in.');
+        }
       }
     } catch (err) {
       toast.error(err.message || 'Authentication failed');
@@ -45,82 +52,107 @@ export default function AuthScreen() {
     <div className="auth-wrapper">
       <div className="auth-background-mesh"></div>
       <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <div className="auth-logo">
-              <CheckSquare className="auth-logo-icon" aria-hidden="true" />
+        {isSignUpSuccess ? (
+          <div className="auth-card success-card">
+            <div className="success-icon-wrapper">
+              <MailCheck className="success-icon" aria-hidden="true" />
+              <div className="success-sparkle">✨</div>
             </div>
-            <h1 className="auth-title">Taskabelle</h1>
-            <p className="auth-subtitle">
-              {isLogin ? 'Welcome back' : 'Start your journey'}
-            </p>
-          </div>
-
-          <form onSubmit={handleAuth} className="auth-form">
-            <div className="form-group auth-input-group">
-              <label className="form-label" htmlFor="email">Email</label>
-              <div className="input-with-icon">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  className="form-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-                <Mail size={20} className="input-icon" aria-hidden="true" />
-              </div>
-            </div>
-            
-            <div className="form-group auth-input-group">
-              <label className="form-label" htmlFor="password">Password</label>
-              <div className="input-with-icon">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete={isLogin ? 'current-password' : 'new-password'}
-                  className="form-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                />
-                <Lock size={20} className="input-icon" aria-hidden="true" />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary auth-submit-btn"
-              disabled={loading}
-            >
-              <span>{loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}</span>
-              {!loading && <ArrowRight size={20} aria-hidden="true" />}
-            </button>
-          </form>
-
-          <div className="auth-footer">
-            <p className="auth-switch-text">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
+            <h2 className="success-title">Check your email</h2>
+            <p className="success-message">
+              We've sent a verification link to <strong>{email}</strong>.<br />
+              Please verify your email to continue.
             </p>
             <button
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsSignUpSuccess(false);
+                setIsLogin(true);
+              }}
               type="button"
-              className="btn btn-ghost auth-switch-btn"
+              className="btn btn-ghost return-btn"
             >
-              {isLogin ? "Sign up now" : "Sign in instead"}
+              <ArrowLeft size={16} />
+              <span>Back to sign in</span>
             </button>
           </div>
-        </div>
+        ) : (
+          <div className="auth-card">
+            <div className="auth-header">
+              <div className="auth-logo">
+                <CheckSquare className="auth-logo-icon" aria-hidden="true" />
+              </div>
+              <h1 className="auth-title">Taskabelle</h1>
+              <p className="auth-subtitle">
+                {isLogin ? 'Welcome back' : 'Start your journey'}
+              </p>
+            </div>
+
+            <form onSubmit={handleAuth} className="auth-form">
+              <div className="form-group auth-input-group">
+                <label className="form-label" htmlFor="email">Email</label>
+                <div className="input-with-icon">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="form-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                  />
+                  <Mail size={20} className="input-icon" aria-hidden="true" />
+                </div>
+              </div>
+              
+              <div className="form-group auth-input-group">
+                <label className="form-label" htmlFor="password">Password</label>
+                <div className="input-with-icon">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                    className="form-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                  <Lock size={20} className="input-icon" aria-hidden="true" />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary auth-submit-btn"
+                disabled={loading}
+              >
+                <span>{loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}</span>
+                {!loading && <ArrowRight size={20} aria-hidden="true" />}
+              </button>
+            </form>
+
+            <div className="auth-footer">
+              <p className="auth-switch-text">
+                {isLogin ? "Don't have an account?" : "Already have an account?"}
+              </p>
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                type="button"
+                className="btn btn-ghost auth-switch-btn"
+              >
+                {isLogin ? "Sign up now" : "Sign in instead"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
