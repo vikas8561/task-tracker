@@ -27,14 +27,35 @@ export function AuthProvider({ children }) {
       return;
     }
 
+    let settled = false;
+
+    // Safety timeout — if Supabase never responds (paused project,
+    // network issue, rate limit), stop the loading screen after 8 s
+    // so the user isn't stuck indefinitely.
+    const safetyTimer = setTimeout(() => {
+      if (!settled) {
+        console.warn('[Auth] getSession timed out — proceeding without session');
+        settled = true;
+        setLoading(false);
+      }
+    }, 8000);
+
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) console.error('Supabase auth error:', error);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (!settled) {
+        settled = true;
+        clearTimeout(safetyTimer);
+        if (error) console.error('Supabase auth error:', error);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
     }).catch(err => {
-      console.error('Failed to get session:', err);
-      setLoading(false);
+      if (!settled) {
+        settled = true;
+        clearTimeout(safetyTimer);
+        console.error('Failed to get session:', err);
+        setLoading(false);
+      }
     });
 
     const {
@@ -45,7 +66,10 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(safetyTimer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function saveDisplayName(name) {
