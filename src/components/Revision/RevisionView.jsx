@@ -9,6 +9,8 @@ import { fetchSubjects } from '../../hooks/useSubjects';
 import { BookMarked } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import LoadingScreen from '../common/LoadingScreen';
+
 export default function RevisionView() {
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -120,17 +122,15 @@ export default function RevisionView() {
         {filtered.length} revision task{filtered.length !== 1 ? 's' : ''}
       </p>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--text-muted)' }}>
-          Loading...
-        </div>
-      ) : filtered.length === 0 ? (
+      <LoadingScreen isLoading={loading} interval={1500} fullScreen={false} />
+
+      {!loading && filtered.length === 0 ? (
         <EmptyState
           icon={BookMarked}
           title="No revision tasks"
           description="Mark tasks for revision using the 📖 button on any task card."
         />
-      ) : (
+      ) : !loading ? (
         <div className="tasks-list">
           {filtered.map((task, i) => (
             <div key={task.id} style={{ animationDelay: `${i * 30}ms` }}>
@@ -143,7 +143,7 @@ export default function RevisionView() {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       <TaskForm
         isOpen={showForm}

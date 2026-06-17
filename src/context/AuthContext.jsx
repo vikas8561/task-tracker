@@ -27,9 +27,13 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error('Supabase auth error:', error);
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch(err => {
+      console.error('Failed to get session:', err);
       setLoading(false);
     });
 

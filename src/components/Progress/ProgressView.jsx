@@ -7,6 +7,7 @@ import { TrendingUp, ChevronDown, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ProgressLineChart from './ProgressLineChart';
 import KnowledgeConstellation from './KnowledgeConstellation';
+import LoadingScreen from '../common/LoadingScreen';
 
 function SubjectProgressCard({ subject, chapters }) {
   const [expanded, setExpanded] = useState(false);
@@ -109,16 +110,11 @@ export default function ProgressView() {
     load();
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--text-muted)' }}>
-        Loading progress...
-      </div>
-    );
-  }
-
   return (
-    <div className="progress-page fade-in">
+    <>
+      <LoadingScreen isLoading={loading} interval={1500} fullScreen={false} />
+      {!loading && (
+        <div className="progress-page fade-in">
       <div className="page-header progress-page-header slide-down">
         <div className="progress-page-icon">
           <TrendingUp size={28} />
@@ -180,5 +176,7 @@ export default function ProgressView() {
         </>
       )}
     </div>
+    )}
+    </>
   );
 }

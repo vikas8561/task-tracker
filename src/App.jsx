@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout/Layout';
@@ -15,6 +15,8 @@ import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
+import LoadingScreen from './components/common/LoadingScreen';
+
 function PrivateApp() {
   const { user, loading, needsDisplayName, saveDisplayName } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,15 +24,13 @@ function PrivateApp() {
   const [showImport, setShowImport] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  if (loading) {
-    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)' }}>Loading...</div>;
-  }
-
-  if (!user) {
-    return <AuthScreen />;
-  }
-
   return (
+    <>
+      <LoadingScreen isLoading={loading} fullScreen={true} />
+
+      {!loading && !user && <AuthScreen />}
+
+      {!loading && user && (
     <AppProvider>
       {needsDisplayName && <NamePromptCard onSave={saveDisplayName} />}
       <Layout
@@ -79,6 +79,8 @@ function PrivateApp() {
         editTask={null}
       />
     </AppProvider>
+    )}
+    </>
   );
 }
 

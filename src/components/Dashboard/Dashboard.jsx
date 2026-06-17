@@ -12,6 +12,7 @@ import ConfirmDialog from '../common/ConfirmDialog';
 import TaskForm from '../Tasks/TaskForm';
 import ActivityHeatmap from './ActivityHeatmap';
 import toast from 'react-hot-toast';
+import LoadingScreen from '../common/LoadingScreen';
 
 export default function Dashboard() {
   const { displayName, isAdmin } = useAuth();
@@ -72,14 +73,6 @@ export default function Dashboard() {
       setDeleting(false);
       setDeleteTarget(null);
     }
-  }
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', color: 'var(--text-muted)' }}>
-        Loading dashboard...
-      </div>
-    );
   }
 
   // Dynamic Greeting
@@ -155,8 +148,11 @@ export default function Dashboard() {
   const dailyQuote = quotes[dayOfYear % quotes.length];
 
   return (
-    <div className="dashboard-page fade-in" style={{ position: 'relative', zIndex: 1 }}>
-      <div className="dashboard-3d-bg"></div>
+    <>
+      <LoadingScreen isLoading={loading} interval={1500} fullScreen={false} />
+      {!loading && (
+        <div className="dashboard-page fade-in" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="dashboard-3d-bg"></div>
 
       {/* Welcome */}
       <div className="page-header-banner slide-down">
@@ -289,5 +285,7 @@ export default function Dashboard() {
         loading={deleting}
       />
     </div>
+    )}
+    </>
   );
 }

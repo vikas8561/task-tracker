@@ -9,6 +9,7 @@ import { fetchTasks, deleteTask } from '../../hooks/useTasks';
 import { CheckSquare, Upload, List, FolderTree } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import LoadingScreen from '../common/LoadingScreen';
 
 export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormClose, editTaskProp, refreshKey }) {
   const { isAdmin } = useAuth();
@@ -99,11 +100,9 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
       </div>
 
       {/* Content */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: 'var(--space-12)', color: 'var(--text-muted)' }}>
-          Loading tasks...
-        </div>
-      ) : filtered.length === 0 ? (
+      <LoadingScreen isLoading={loading} interval={1500} fullScreen={false} />
+      
+      {!loading && filtered.length === 0 ? (
         <EmptyState
           icon={CheckSquare}
           title="No tasks found"
@@ -116,14 +115,14 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
             ) : null
           }
         />
-      ) : viewMode === 'hierarchy' ? (
+      ) : !loading && viewMode === 'hierarchy' ? (
         <HierarchyTaskView
           tasks={filtered}
           onUpdated={handleTaskUpdated}
           onEdit={(t) => { setEditTask(t); setShowForm(true); }}
           onDelete={setDeleteTarget}
         />
-      ) : (
+      ) : !loading ? (
         <div className="tasks-list">
           {filtered.map((task, i) => (
             <div key={task.id} style={{ animationDelay: `${i * 30}ms` }}>
@@ -136,7 +135,7 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Modals */}
       <TaskForm
