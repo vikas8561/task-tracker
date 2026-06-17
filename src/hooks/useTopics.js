@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getCurrentUser } from '../lib/localAuth';
 
 
 export async function fetchTopics(chapterId) {
@@ -14,7 +15,7 @@ export async function fetchTopics(chapterId) {
 export async function createTopic(chapterId, name) {
   const { data, error } = await supabase
     .from('topics')
-    .insert([{ chapter_id: chapterId, name }])
+    .insert([{ chapter_id: chapterId, name, user_id: getCurrentUser()?.id }])
     .select()
     .single();
   if (error) throw error;

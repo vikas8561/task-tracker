@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getCurrentUser } from '../lib/localAuth';
 
 
 export async function fetchSubTopics(topicId) {
@@ -14,7 +15,7 @@ export async function fetchSubTopics(topicId) {
 export async function createSubTopic(topicId, name) {
   const { data, error } = await supabase
     .from('sub_topics')
-    .insert([{ topic_id: topicId, name }])
+    .insert([{ topic_id: topicId, name, user_id: getCurrentUser()?.id }])
     .select()
     .single();
   if (error) throw error;
