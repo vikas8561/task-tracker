@@ -336,7 +336,7 @@ function SubtopicRow({ task, onUpdated, onEdit, onDelete, dragHandleProps, isDra
 /* Topic section (collapsible, contains subtopic rows)                 */
 /* ------------------------------------------------------------------ */
 function TopicSection({ topic, onUpdated, onEdit, onDelete }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [tasks, setTasks] = useState(topic.tasks);
   const dragSrc = useRef(null);
   const [dragOverId, setDragOverId] = useState(null);
@@ -451,7 +451,7 @@ function TopicSection({ topic, onUpdated, onEdit, onDelete }) {
 /* Chapter folder                                                       */
 /* ------------------------------------------------------------------ */
 function ChapterFolder({ chapter, color, onUpdated, onEdit, onDelete }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const done = chapter.topics.reduce(
     (acc, t) => acc + t.tasks.filter((tk) => tk.is_completed).length,
@@ -500,7 +500,7 @@ function ChapterFolder({ chapter, color, onUpdated, onEdit, onDelete }) {
 /* Subject folder                                                       */
 /* ------------------------------------------------------------------ */
 function SubjectFolder({ subject, onUpdated, onEdit, onDelete }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const { total, done } = countStats(subject.chapters);
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
