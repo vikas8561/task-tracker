@@ -43,24 +43,32 @@ export default function LoadingScreen({
   const [currentIndex, setCurrentIndex] = useState(() => Math.floor(Math.random() * messages.length));
   const [isFadingOut, setIsFadingOut] = useState(false);
 
-  const [mountLoading, setMountLoading] = useState(true);
+  // Initialize mountLoading from the isLoading prop so if data is already loaded
+  // (e.g. fast fetch or cached), the loading overlay never mounts at all.
+  const [mountLoading, setMountLoading] = useState(isLoading);
   const [fadeLoading, setFadeLoading] = useState(false);
 
   useEffect(() => {
     if (!isLoading) {
+      // If we're not currently mounted, nothing to fade out
+      if (!mountLoading) return;
+      
       setFadeLoading(true);
       const timer = setTimeout(() => {
         setMountLoading(false);
-      }, 1200);
+        setFadeLoading(false);
+      }, 600);
       return () => clearTimeout(timer);
     } else {
       setMountLoading(true);
       setFadeLoading(false);
     }
-  }, [isLoading]);
+  }, [isLoading]); // mountLoading intentionally excluded to avoid re-triggering
 
-  // Message rotation logic
+  // Message rotation logic — only run when the loader is visible
   useEffect(() => {
+    if (!mountLoading) return;
+    
     const timer = setInterval(() => {
       setIsFadingOut(true);
       setTimeout(() => {
@@ -70,7 +78,7 @@ export default function LoadingScreen({
     }, interval);
 
     return () => clearInterval(timer);
-  }, [messages, interval]);
+  }, [messages, interval, mountLoading]);
 
   if (!mountLoading) return null;
 
@@ -109,7 +117,7 @@ export default function LoadingScreen({
 
           {/* Clean Modern Message Display */}
           <div className="clean-loader-text-container">
-            <p className={`clean-loader-text ${isFadingOut ? 'fade-out' : 'fade-in'}`}>
+            <p className={`clean-loader-text ${isFadingOut ? 'loader-msg-fade-out' : 'loader-msg-fade-in'}`}>
               {messages[currentIndex]}
             </p>
           </div>

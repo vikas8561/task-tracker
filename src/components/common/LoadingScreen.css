@@ -12,7 +12,7 @@
   height: 100vh;
   z-index: 9999;
   background-color: var(--bg-primary);
-  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .app-global-loader.inline {
@@ -188,13 +188,13 @@
   text-shadow: 0 2px 15px var(--accent-1), 0 0 30px rgba(255,255,255,0.2);
 }
 
-.fade-in {
+.loader-msg-fade-in {
   opacity: 1;
   transform: scale(1);
   transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
-.fade-out {
+.loader-msg-fade-out {
   opacity: 0;
   transform: scale(0.95);
   transition: opacity 0.6s ease, transform 0.6s ease;
