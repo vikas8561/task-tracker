@@ -2806,6 +2806,11 @@ input[type="search"]::-webkit-search-results-decoration {
   align-content: start;
 }
 
+.dashboard-recent-section {
+  margin-top: var(--space-6);
+}
+
+
 /* Circular progress ring */
 .circular-progress {
   position: relative;
