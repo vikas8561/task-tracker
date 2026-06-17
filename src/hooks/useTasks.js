@@ -69,9 +69,12 @@ export async function fetchTasks(filters = {}) {
 }
 
 export async function createTask(taskData) {
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('tasks')
-    .insert([{ ...taskData }])
+    .insert([{ ...taskData, user_id: user.id }])
     .select(`
       *,
       subjects(id, name, color),
@@ -85,10 +88,17 @@ export async function createTask(taskData) {
 }
 
 export async function createBulkTasks(tasksArray) {
-  const tasksWithDevice = tasksArray;
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const tasksWithUser = tasksArray.map(task => ({
+    ...task,
+    user_id: user.id
+  }));
+
   const { data, error } = await supabase
     .from('tasks')
-    .insert(tasksWithDevice)
+    .insert(tasksWithUser)
     .select(`
       *,
       subjects(id, name, color),

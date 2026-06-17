@@ -83,9 +83,12 @@ export async function fetchFolders() {
 }
 
 export async function createFolder({ name, parentId = null, icon = '📁', color = null }) {
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('note_folders')
-    .insert({ name, parent_id: parentId, icon, color })
+    .insert({ name, parent_id: parentId, icon, color, user_id: user.id })
     .select()
     .single();
   if (error) throw error;
@@ -217,6 +220,9 @@ export async function fetchNoteById(id) {
 }
 
 export async function createNote({ title, content = '', folderId = null, tags = [] }) {
+  const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
+
   const slug = generateSlug(title);
   const rt = calcReadingTime(content);
   let frontmatter = {};
@@ -233,6 +239,7 @@ export async function createNote({ title, content = '', folderId = null, tags = 
       frontmatter,
       word_count: rt.words,
       reading_time: rt.minutes,
+      user_id: user.id,
     })
     .select()
     .single();
@@ -342,6 +349,7 @@ export async function uploadNoteImage(file, noteId = null) {
       public_url: publicUrl,
       size_bytes: file.size,
       mime_type: file.type,
+      user_id: user.id,
     })
     .select()
     .single();
