@@ -21,6 +21,7 @@ import { normalizeSubjectColor } from '../../utils/subjectColor';
 import Badge from '../common/Badge';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/AppContext';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -223,6 +224,7 @@ function ResourcesCell({ task, onUpdated }) {
 /* ------------------------------------------------------------------ */
 function SubtopicRow({ task, onUpdated, onEdit, onDelete, dragHandleProps, isDragOver }) {
   const { isAdmin } = useAuth();
+  const { triggerCelebration } = useApp();
   const [toggling, setToggling] = useState(false);
   const overdue = isOverdue(task.due_date) && !task.is_completed;
 
@@ -231,6 +233,9 @@ function SubtopicRow({ task, onUpdated, onEdit, onDelete, dragHandleProps, isDra
     try {
       const updated = await toggleComplete(task);
       onUpdated(updated);
+      if (updated.is_completed) {
+        triggerCelebration();
+      }
     } catch {
       toast.error('Failed to update task');
     } finally {

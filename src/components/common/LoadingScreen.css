@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&display=swap');
+
 /* ==========================================================
    GLOBAL LOADING SCREEN EXIT TRANSITION
    ========================================================== */
@@ -165,8 +167,6 @@
 /* ==========================================================
    CLEAN TEXT DISPLAY
    ========================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&display=swap');
 
 .clean-loader-text-container {
   position: relative; /* Flow naturally below the rings */

@@ -1,0 +1,107 @@
+.celebration-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none; /* Let clicks pass through */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  background: radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 70%);
+  /* 3.5s duration to exactly match React timeout */
+  animation: overlayInOut 3.5s ease-in-out forwards;
+}
+
+.celebration-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  animation: containerInOut 3.5s forwards;
+  transform-origin: center;
+}
+
+.celebration-text {
+  font-family: 'Nunito', 'Inter', sans-serif;
+  font-size: clamp(3rem, 6vw, 4.5rem);
+  font-weight: 900;
+  /* Add a white shimmer to the gradient */
+  background: linear-gradient(135deg, #ff8a00 0%, #da1b60 25%, #ffffff 50%, #ff6b35 75%, #ff8a00 100%);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+  text-align: center;
+  letter-spacing: -0.02em;
+  animation: textPulseAndShimmer 2s ease-in-out infinite;
+}
+
+.celebration-emoji {
+  font-size: clamp(4rem, 8vw, 6rem);
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+  animation: hyperDance 1.5s infinite alternate ease-in-out;
+}
+
+/* 3.5 seconds total */
+@keyframes overlayInOut {
+  0% { opacity: 0; backdrop-filter: blur(0px); }
+  10% { opacity: 1; backdrop-filter: blur(4px); }
+  85% { opacity: 1; backdrop-filter: blur(4px); } /* Start fading out after 3s (~85% of 3.5s) */
+  100% { opacity: 0; backdrop-filter: blur(0px); }
+}
+
+@keyframes containerInOut {
+  /* Entrance: 0% to 15% */
+  0% { 
+    transform: scale(0.3) translateY(40px); 
+    opacity: 0; 
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); 
+  }
+  15% { 
+    transform: scale(1) translateY(0); 
+    opacity: 1; 
+  }
+  
+  /* Hold: 15% to 85% */
+  85% { 
+    transform: scale(1) translateY(0); 
+    opacity: 1; 
+    animation-timing-function: cubic-bezier(0.36, 0, 0.66, -0.56); 
+  }
+  
+  /* Exit: 85% to 100% */
+  100% { 
+    transform: scale(0.5) translateY(30px); 
+    opacity: 0; 
+  }
+}
+
+@keyframes hyperDance {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  25% { transform: translateY(-20px) scale(1.1) rotate(-15deg); }
+  50% { transform: translateY(0) scale(1) rotate(0deg); }
+  75% { transform: translateY(-20px) scale(1.1) rotate(15deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
+}
+
+@keyframes textPulseAndShimmer {
+  0% { 
+    background-position: 0% 50%; 
+    filter: drop-shadow(0px 10px 30px rgba(218, 27, 96, 0.4));
+    transform: scale(1);
+  }
+  50% { 
+    background-position: 100% 50%; 
+    filter: drop-shadow(0px 15px 50px rgba(255, 138, 0, 0.9)); /* Big glowing pulse */
+    transform: scale(1.04); /* Gentle heartbeat swell */
+  }
+  100% { 
+    background-position: 0% 50%; 
+    filter: drop-shadow(0px 10px 30px rgba(218, 27, 96, 0.4));
+    transform: scale(1);
+  }
+}

@@ -4,6 +4,7 @@ import { toggleComplete, toggleRevision } from '../../hooks/useTasks';
 import { normalizeSubjectColor } from '../../utils/subjectColor';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/AppContext';
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
@@ -19,11 +20,15 @@ function isOverdue(dateStr) {
 
 export default function TaskCard({ task, onUpdated, onEdit, onDelete }) {
   const { isAdmin } = useAuth();
+  const { triggerCelebration } = useApp();
 
   async function handleToggleComplete() {
     try {
       const updated = await toggleComplete(task);
       onUpdated(updated);
+      if (updated.is_completed) {
+        triggerCelebration();
+      }
     } catch {
       toast.error('Failed to update task');
     }

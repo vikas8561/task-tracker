@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
 import LoadingScreen from './components/common/LoadingScreen';
+import CelebrationOverlay from './components/common/CelebrationOverlay';
 
 function PrivateApp() {
   const { user, loading, needsDisplayName, saveDisplayName } = useAuth();
@@ -78,6 +79,7 @@ function PrivateApp() {
         }}
         editTask={null}
       />
+      <CelebrationOverlay />
     </AppProvider>
     )}
     </>

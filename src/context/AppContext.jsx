@@ -7,6 +7,7 @@ const initialState = {
   tasks: [],
   loading: false,
   refreshKey: 0, // increment to trigger data refresh across components
+  isCelebrating: false, // For task completion animation
 };
 
 function reducer(state, action) {
@@ -30,6 +31,8 @@ function reducer(state, action) {
       return { ...state, tasks: state.tasks.filter((t) => t.id !== action.payload) };
     case 'ADD_SUBJECT':
       return { ...state, subjects: [...state.subjects, action.payload] };
+    case 'TRIGGER_CELEBRATION':
+      return { ...state, isCelebrating: action.payload };
     default:
       return state;
   }
@@ -40,8 +43,16 @@ export function AppProvider({ children }) {
 
   const refresh = useCallback(() => dispatch({ type: 'REFRESH' }), []);
 
+  const triggerCelebration = useCallback(() => {
+    dispatch({ type: 'TRIGGER_CELEBRATION', payload: true });
+    // Auto-hide after 3.5 seconds to allow smooth exit animations
+    setTimeout(() => {
+      dispatch({ type: 'TRIGGER_CELEBRATION', payload: false });
+    }, 3500);
+  }, []);
+
   return (
-    <AppContext.Provider value={{ state, dispatch, refresh }}>
+    <AppContext.Provider value={{ state, dispatch, refresh, triggerCelebration }}>
       {children}
     </AppContext.Provider>
   );
