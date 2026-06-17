@@ -1,14 +1,14 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, TrendingUp, BookMarked, Zap, LogOut, FileText, Search, Plus, Menu } from 'lucide-react';
+import { LayoutGrid, ListTodo, Flame, BookOpenCheck, NotebookPen, Zap, LogOut, Search, Plus, Menu } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', id: 'nav-dashboard' },
-  { to: '/tasks', icon: CheckSquare, label: 'Tasks', id: 'nav-tasks' },
-  { to: '/progress', icon: TrendingUp, label: 'Progress', id: 'nav-progress' },
-  { to: '/revision', icon: BookMarked, label: 'Revision', id: 'nav-revision' },
-  { to: '/notes', icon: FileText, label: 'Notes', id: 'nav-notes' },
+  { to: '/', icon: LayoutGrid, label: 'Dashboard', id: 'nav-dashboard', color: '#ff8a00' },
+  { to: '/tasks', icon: ListTodo, label: 'Tasks', id: 'nav-tasks', color: '#da1b60' },
+  { to: '/progress', icon: Flame, label: 'Progress', id: 'nav-progress', color: '#ff9f43' },
+  { to: '/revision', icon: BookOpenCheck, label: 'Revision', id: 'nav-revision', color: '#ff6b35' },
+  { to: '/notes', icon: NotebookPen, label: 'Notes', id: 'nav-notes', color: '#e85d75' },
 ];
 
 export default function TopNav({
@@ -33,23 +33,27 @@ export default function TopNav({
       <header className={`top-nav${isTasksPage ? ' top-nav--tasks' : ''}`}>
         <div className="top-nav-inner">
           <div className="top-nav-logo">
-            <div className="top-nav-logo-icon">
-              <Zap size={18} color="#ffffff" />
-            </div>
+
             <span className="top-nav-logo-text text-gradient">Taskabelle</span>
           </div>
 
           <nav className="top-nav-links" aria-label="Main navigation">
-            {navItems.map(({ to, icon: Icon, label, id }) => (
+            {navItems.map(({ to, icon: Icon, label, id, color }) => (
               <NavLink
                 key={to}
                 to={to}
                 id={id}
                 className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}
+                style={({ isActive }) => isActive ? {
+                  color: color,
+                  background: `${color}15`,
+                  borderColor: `${color}40`,
+                  boxShadow: `0 0 16px ${color}25`
+                } : {}}
                 end={to === '/'}
                 onClick={onClose}
               >
-                <Icon size={20} className="top-nav-link-icon" />
+                <Icon size={20} className="top-nav-link-icon" style={{ color: 'inherit' }} />
                 <span>{label}</span>
               </NavLink>
             ))}
@@ -113,23 +117,26 @@ export default function TopNav({
       {/* Mobile drawer */}
       <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <Zap size={18} color="#ffffff" />
-          </div>
+
           <span className="sidebar-logo-text">Taskabelle</span>
         </div>
 
         <nav className="sidebar-nav" aria-label="Mobile navigation">
-          {navItems.map(({ to, icon: Icon, label, id }) => (
+          {navItems.map(({ to, icon: Icon, label, id, color }) => (
             <NavLink
               key={to}
               to={to}
               id={`mobile-${id}`}
               className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+              style={({ isActive }) => isActive ? {
+                color: color,
+                background: `${color}15`,
+                borderColor: `${color}40`
+              } : {}}
               end={to === '/'}
               onClick={onClose}
             >
-              <Icon size={18} className="nav-link-icon" />
+              <Icon size={18} className="nav-link-icon" style={{ color: 'inherit' }} />
               <span>{label}</span>
             </NavLink>
           ))}
@@ -181,15 +188,18 @@ export default function TopNav({
 export function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Mobile navigation">
-      {navItems.map(({ to, icon: Icon, label, id }) => (
+      {navItems.map(({ to, icon: Icon, label, id, color }) => (
         <NavLink
           key={to}
           to={to}
           id={`bottom-${id}`}
           className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}
+          style={({ isActive }) => isActive ? {
+            color: color,
+          } : {}}
           end={to === '/'}
         >
-          <Icon size={20} />
+          <Icon size={20} style={{ color: 'inherit' }} />
           <span>{label}</span>
         </NavLink>
       ))}
