@@ -138,28 +138,9 @@ export default function MarkdownImport({ isOpen, onClose, onImported }) {
         };
       });
 
-      const taskStatesToCreate = parsed.map(t => ({
-        is_revision: t.is_revision || false,
-        is_completed: t.is_completed || false,
-        completed_at: t.completed_at || null,
-      }));
-
       // 6. Bulk Insert Tasks
       const created = await createBulkTasks(tasksToCreate);
 
-      // 7. Bulk Insert User States
-      if (created && created.length === tasksToCreate.length) {
-        const statesToInsert = created.map((ct, i) => ({
-          task_id: ct.id,
-          is_completed: taskStatesToCreate[i].is_completed,
-          completed_at: taskStatesToCreate[i].completed_at,
-          is_revision: taskStatesToCreate[i].is_revision,
-        })).filter(s => s.is_completed || s.is_revision);
-
-        if (statesToInsert.length > 0) {
-          await createBulkTaskStates(statesToInsert);
-        }
-      }
 
       toast.success(`Imported ${created.length} tasks successfully!`);
       onImported(created);

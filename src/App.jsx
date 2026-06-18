@@ -41,7 +41,7 @@ function PrivateApp() {
         onSearchChange={setSearchQuery}
       >
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Dashboard refreshKey={refreshKey} />} />
           <Route
             path="/tasks"
             element={

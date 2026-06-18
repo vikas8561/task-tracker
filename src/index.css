@@ -2731,6 +2731,39 @@ input[type="search"]::-webkit-search-results-decoration {
   color: var(--text-primary);
 }
 
+/* ── Lazy-load spinner ──────────────────────────────────────────── */
+@keyframes htv-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.htv-loading-spin {
+  animation: htv-spin 0.8s linear infinite;
+  color: var(--accent-1);
+  flex-shrink: 0;
+}
+
+/* Loading row shown inside an open chapter while fetching tasks */
+.htv-chapter-loading-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Empty state paragraphs inside chapter / topic */
+.htv-chapter-empty,
+.htv-topic-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 12px 18px;
+  font-style: italic;
+  margin: 0;
+}
+
 /* Task Form Step Card */
 .tf-step-card {
   background: rgba(255, 255, 255, 0.02);

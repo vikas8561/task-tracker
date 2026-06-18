@@ -14,7 +14,7 @@ import ActivityHeatmap from './ActivityHeatmap';
 import toast from 'react-hot-toast';
 import LoadingScreen from '../common/LoadingScreen';
 
-export default function Dashboard() {
+export default function Dashboard({ refreshKey }) {
   const { displayName, isAdmin } = useAuth();
   const [stats, setStats] = useState(null);
   const [recentTasks, setRecentTasks] = useState([]);
@@ -39,7 +39,7 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [refreshKey]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 768px)');

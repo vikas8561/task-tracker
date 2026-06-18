@@ -50,7 +50,8 @@ export async function fetchTasks(filters = {}) {
       sub_topics(id, name)
     `)
     .order('sort_order', { ascending: true, nullsFirst: false })
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
+    .limit(10000); // override PostgREST default cap (often 100–1000 on free tier)
 
   if (filters.subject_id) query = query.eq('subject_id', filters.subject_id);
   if (filters.chapter_id) query = query.eq('chapter_id', filters.chapter_id);
@@ -84,6 +85,45 @@ export async function fetchTasks(filters = {}) {
   }
 
   return mergedData;
+}
+
+/**
+ * Fetch all tasks for a single chapter (lazy-loaded on chapter expand).
+ * Returns tasks with user task states (is_completed, is_revision) merged in.
+ * Only called when the user first opens a chapter — never on initial page load.
+ */
+export async function fetchChapterTasks(chapterId) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(`
+      *,
+      subjects(id, name, color),
+      chapters(id, name),
+      topics(id, name),
+      sub_topics(id, name)
+    `)
+    .eq('chapter_id', chapterId)
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true })
+    .limit(5000);
+
+  if (error) {
+    if (error.code === '42P01' || error.code === '42703') {
+      console.warn('Schema not fully applied yet:', error.message);
+      return [];
+    }
+    throw error;
+  }
+
+  if (!data.length) return [];
+
+  const stateMap = await fetchUserTaskStates(data.map(t => t.id));
+  return data.map(t => ({
+    ...t,
+    is_completed: stateMap[t.id]?.is_completed || false,
+    is_revision:  stateMap[t.id]?.is_revision  || false,
+    completed_at: stateMap[t.id]?.completed_at || null,
+  }));
 }
 
 export async function createTask(taskData) {

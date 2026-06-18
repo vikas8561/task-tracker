@@ -6,7 +6,8 @@ export async function fetchSubjects() {
   const { data, error } = await supabase
     .from('subjects')
     .select('*')
-        .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
+    .limit(1000);
   if (error) throw error;
   return data;
 }
