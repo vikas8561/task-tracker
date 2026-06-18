@@ -1,20 +1,38 @@
 import { supabase } from '../lib/supabase';
 import { getCurrentUser } from '../lib/localAuth';
 
+// Tracks whether user_task_states table exists in the DB.
+// Set to false on first 400 so we stop firing failing requests.
+let userTaskStatesAvailable = true;
 
-// Helper to fetch user states
+
+// Helper to fetch ALL user task states (avoids URL-length issues with large IN lists)
 async function fetchUserTaskStates(taskIds) {
+  if (!userTaskStatesAvailable) return {};
   if (!taskIds || taskIds.length === 0) return {};
   const user = getCurrentUser();
   if (!user) return {};
 
-  const { data, error } = await supabase
+  // Fetch all states for the user in one query — no IN clause needed.
+  // For very targeted fetches (≤50 IDs) we still use IN to avoid over-fetching.
+  let query = supabase
     .from('user_task_states')
     .select('*')
-    .eq('user_id', user.id)
-    .in('task_id', taskIds);
+    .eq('user_id', user.id);
 
-  if (error) return {};
+  if (taskIds.length <= 50) {
+    query = query.in('task_id', taskIds);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    // 400 = table doesn't exist yet — stop trying until page reload
+    if (error.code === '42P01' || error.message?.includes('relation') || error.status === 400) {
+      userTaskStatesAvailable = false;
+      console.warn('[user_task_states] Table not found. Run the schema SQL in Supabase to enable task state persistence.');
+    }
+    return {};
+  }
 
   const stateMap = {};
   for (const st of data) stateMap[st.task_id] = st;
@@ -135,6 +153,51 @@ export async function deleteTask(id) {
   if (error) throw error;
 }
 
+
+// Upsert task state: SELECT first, then UPDATE or INSERT.
+// Skips entirely if the table is known to be unavailable.
+async function upsertTaskState(userId, taskId, fields) {
+  if (!userTaskStatesAvailable) throw new Error('user_task_states table unavailable');
+
+  const { data: existing, error: selectError } = await supabase
+    .from('user_task_states')
+    .select('user_id,task_id')
+    .eq('user_id', userId)
+    .eq('task_id', taskId)
+    .maybeSingle();
+
+  if (selectError) {
+    // Mark table as unavailable so we stop hitting the DB on every toggle
+    if (selectError.code === '42P01' || selectError.message?.includes('relation') || selectError.status === 400) {
+      userTaskStatesAvailable = false;
+      console.warn('[user_task_states] Table not found. Run the schema SQL in Supabase to enable task state persistence.');
+    }
+    throw selectError;
+  }
+
+  if (existing) {
+    // Row exists → UPDATE
+    const { data, error } = await supabase
+      .from('user_task_states')
+      .update({ ...fields, updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('task_id', taskId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } else {
+    // No row yet → INSERT
+    const { data, error } = await supabase
+      .from('user_task_states')
+      .insert({ user_id: userId, task_id: taskId, ...fields })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+}
+
 export async function toggleComplete(task) {
   const user = getCurrentUser();
   if (!user) throw new Error('Not authenticated');
@@ -142,25 +205,23 @@ export async function toggleComplete(task) {
   const nowCompleted = !task.is_completed;
   const completedAt = nowCompleted ? new Date().toISOString() : null;
 
-  const { data, error } = await supabase
-    .from('user_task_states')
-    .upsert({
-      user_id: user.id,
-      task_id: task.id,
+  try {
+    const data = await upsertTaskState(user.id, task.id, {
       is_completed: nowCompleted,
       completed_at: completedAt,
-      is_revision: task.is_revision || false
-    }, { onConflict: 'user_id, task_id' })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return {
-    ...task,
-    is_completed: data.is_completed,
-    completed_at: data.completed_at,
-    is_revision: data.is_revision
-  };
+      is_revision: task.is_revision || false,
+    });
+    return {
+      ...task,
+      is_completed: data.is_completed,
+      completed_at: data.completed_at,
+      is_revision: data.is_revision,
+    };
+  } catch (err) {
+    // Table missing (400) — degrade to local-state-only so UI still responds
+    console.warn('[toggleComplete] DB unavailable, using local state:', err.message);
+    return { ...task, is_completed: nowCompleted, completed_at: completedAt };
+  }
 }
 
 export async function toggleRevision(task) {
@@ -169,25 +230,23 @@ export async function toggleRevision(task) {
 
   const nowRevision = !task.is_revision;
 
-  const { data, error } = await supabase
-    .from('user_task_states')
-    .upsert({
-      user_id: user.id,
-      task_id: task.id,
+  try {
+    const data = await upsertTaskState(user.id, task.id, {
       is_completed: task.is_completed || false,
       completed_at: task.completed_at || null,
-      is_revision: nowRevision
-    }, { onConflict: 'user_id, task_id' })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return {
-    ...task,
-    is_completed: data.is_completed,
-    completed_at: data.completed_at,
-    is_revision: data.is_revision
-  };
+      is_revision: nowRevision,
+    });
+    return {
+      ...task,
+      is_completed: data.is_completed,
+      completed_at: data.completed_at,
+      is_revision: data.is_revision,
+    };
+  } catch (err) {
+    // Table missing (400) — degrade to local-state-only so UI still responds
+    console.warn('[toggleRevision] DB unavailable, using local state:', err.message);
+    return { ...task, is_revision: nowRevision };
+  }
 }
 
 export async function fetchAllCompletedTimestamps() {
