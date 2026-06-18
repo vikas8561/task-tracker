@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, ListTodo, Flame, BookOpenCheck, NotebookPen, Zap, LogOut, Search, Plus, Menu } from 'lucide-react';
+import { LayoutGrid, ListTodo, Flame, BookOpenCheck, NotebookPen, BrainCircuit, LogOut, Plus, Menu, Upload } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/progress', icon: Flame, label: 'Progress', id: 'nav-progress', color: '#ff9f43' },
   { to: '/revision', icon: BookOpenCheck, label: 'Revision', id: 'nav-revision', color: '#ff6b35' },
   { to: '/notes', icon: NotebookPen, label: 'Notes', id: 'nav-notes', color: '#e85d75' },
+  { to: '/questions', icon: BrainCircuit, label: 'Questions', id: 'nav-questions', color: '#c084fc' },
 ];
 
 export default function TopNav({
@@ -16,11 +17,12 @@ export default function TopNav({
   onMenuToggle,
   onAddTask,
   onImportClick,
-  searchQuery,
-  onSearchChange,
+  onAddQuestion,
+  onImportQuestion,
 }) {
   const location = useLocation();
   const isTasksPage = location.pathname === '/tasks';
+  const isQuestionsPage = location.pathname === '/questions';
   const { isAdmin, signOut } = useAuth();
 
   function handleLogout() {
@@ -29,7 +31,7 @@ export default function TopNav({
 
   return (
     <>
-      <header className={`top-nav${isTasksPage ? ' top-nav--tasks' : ''}`}>
+      <header className={`top-nav${(isTasksPage || isQuestionsPage) ? ' top-nav--tasks' : ''}`}>
         <div className="top-nav-inner">
           <div className="top-nav-logo">
 
@@ -61,17 +63,6 @@ export default function TopNav({
           <div className="top-nav-actions">
             {isTasksPage && (
               <div className="top-nav-task-tools">
-                <div className="top-nav-search">
-                  <Search size={15} className="top-nav-search-icon" />
-                  <input
-                    type="search"
-                    placeholder="Search tasks..."
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    aria-label="Search tasks"
-                    id="topnav-search-input"
-                  />
-                </div>
                 {isAdmin && (
                   <>
                     <button
@@ -79,7 +70,7 @@ export default function TopNav({
                       onClick={onImportClick}
                       id="topnav-import-md-btn"
                     >
-                      Import MD
+                      <Upload size={14} /> <span className="top-nav-btn-label">Import MD</span>
                     </button>
                     <button
                       className="btn btn-primary top-nav-add-btn"
@@ -87,10 +78,29 @@ export default function TopNav({
                       id="topnav-add-task-btn"
                     >
                       <Plus size={16} />
-                      <span className="top-nav-add-label">New Task</span>
+                      <span className="top-nav-btn-label">New Task</span>
                     </button>
                   </>
                 )}
+              </div>
+            )}
+            {isQuestionsPage && isAdmin && (
+              <div className="top-nav-task-tools">
+                <button
+                  className="btn btn-secondary top-nav-import-btn"
+                  onClick={onImportQuestion}
+                  id="topnav-import-questions-btn"
+                >
+                  <Upload size={14} /> <span className="top-nav-btn-label">Import MD</span>
+                </button>
+                <button
+                  className="btn btn-primary top-nav-add-btn"
+                  onClick={onAddQuestion}
+                  id="topnav-add-question-btn"
+                >
+                  <Plus size={16} />
+                  <span className="top-nav-btn-label">New Question</span>
+                </button>
               </div>
             )}
             <button
@@ -143,26 +153,26 @@ export default function TopNav({
 
         {isTasksPage && (
           <div className="sidebar-task-tools">
-            <div className="top-nav-search sidebar-search">
-              <Search size={15} className="top-nav-search-icon" />
-              <input
-                type="search"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                aria-label="Search tasks"
-              />
-            </div>
             {isAdmin && (
               <>
                 <button className="btn btn-secondary w-full" onClick={() => { onImportClick(); onClose(); }}>
-                  Import MD
+                  <Upload size={14} /> Import MD
                 </button>
                 <button className="btn btn-primary w-full" onClick={() => { onAddTask(); onClose(); }}>
                   <Plus size={16} /> New Task
                 </button>
               </>
             )}
+          </div>
+        )}
+        {isQuestionsPage && isAdmin && (
+          <div className="sidebar-task-tools">
+            <button className="btn btn-secondary w-full" onClick={() => { onImportQuestion?.(); onClose(); }}>
+              <Upload size={14} /> Import MD
+            </button>
+            <button className="btn btn-primary w-full" onClick={() => { onAddQuestion?.(); onClose(); }}>
+              <Plus size={16} /> New Question
+            </button>
           </div>
         )}
 

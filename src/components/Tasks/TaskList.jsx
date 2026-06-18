@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
 import HierarchyTaskView from './HierarchyTaskView';
 import ConfirmDialog from '../common/ConfirmDialog';
 import EmptyState from '../common/EmptyState';
 import { fetchChapterTasks, deleteTask } from '../../hooks/useTasks';
 import { fetchHierarchyMeta } from '../../hooks/useHierarchy';
-import { CheckSquare, List, FolderTree } from 'lucide-react';
+import { CheckSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import LoadingScreen from '../common/LoadingScreen';
 
-export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormClose, editTaskProp, refreshKey }) {
+export default function TaskList({ onAddTask, showFormProp, onFormClose, editTaskProp, refreshKey }) {
   const { isAdmin } = useAuth();
 
   // ── Hierarchy skeleton (subjects + chapters + topics + counts, NO task data)
@@ -26,7 +25,6 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
   const [editTask, setEditTask] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [viewMode, setViewMode] = useState('hierarchy');
 
   // ── Load hierarchy skeleton on mount / refresh ────────────────────────────
   const loadHierarchy = useCallback(async () => {
@@ -120,46 +118,10 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
     }
   }
 
-  // ── List view: flatten all already-loaded tasks ───────────────────────────
-  const allLoadedTasks = Object.values(loadedChapters)
-    .filter(v => Array.isArray(v))
-    .flat();
-
-  const filteredForList = allLoadedTasks.filter(t => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      t.title.toLowerCase().includes(q) ||
-      t.subjects?.name?.toLowerCase().includes(q) ||
-      t.chapters?.name?.toLowerCase().includes(q)
-    );
-  });
-
   const hasSubjects = (hierarchy?.subjects?.length ?? 0) > 0;
 
   return (
     <div className="task-page">
-      {/* Toolbar */}
-      <div className="task-page-toolbar">
-        <div className="htv-view-toggle task-page-view-toggle">
-          <button
-            className={`htv-toggle-btn ${viewMode === 'list' ? 'htv-toggle-active' : ''}`}
-            onClick={() => setViewMode('list')}
-            id="view-mode-list"
-            title="List view"
-          >
-            <List size={14} /> List
-          </button>
-          <button
-            className={`htv-toggle-btn ${viewMode === 'hierarchy' ? 'htv-toggle-active' : ''}`}
-            onClick={() => setViewMode('hierarchy')}
-            id="view-mode-hierarchy"
-            title="Hierarchy view"
-          >
-            <FolderTree size={14} /> Hierarchy
-          </button>
-        </div>
-      </div>
 
       <LoadingScreen isLoading={loading} interval={1500} fullScreen={false} />
 
@@ -180,7 +142,7 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
       )}
 
       {/* Hierarchy view */}
-      {!loading && hasSubjects && viewMode === 'hierarchy' && (
+      {!loading && hasSubjects && (
         <HierarchyTaskView
           subjects={hierarchy.subjects}
           chapters={hierarchy.chapters}
@@ -192,36 +154,7 @@ export default function TaskList({ searchQuery, onAddTask, showFormProp, onFormC
           onUpdated={handleTaskUpdated}
           onEdit={(t) => { setEditTask(t); setShowForm(true); }}
           onDelete={setDeleteTarget}
-          searchQuery={searchQuery}
         />
-      )}
-
-      {/* List view — only loaded tasks */}
-      {!loading && hasSubjects && viewMode === 'list' && (
-        filteredForList.length === 0 ? (
-          <EmptyState
-            icon={CheckSquare}
-            title={searchQuery ? 'No matching tasks loaded' : 'No tasks loaded yet'}
-            description={
-              searchQuery
-                ? 'No loaded tasks match your search. Expand chapters in Hierarchy view to load more.'
-                : 'Switch to Hierarchy view and expand chapters to load tasks.'
-            }
-          />
-        ) : (
-          <div className="tasks-list">
-            {filteredForList.map((task, i) => (
-              <div key={task.id} style={{ animationDelay: `${i * 30}ms` }}>
-                <TaskCard
-                  task={task}
-                  onUpdated={handleTaskUpdated}
-                  onEdit={(t) => { setEditTask(t); setShowForm(true); }}
-                  onDelete={setDeleteTarget}
-                />
-              </div>
-            ))}
-          </div>
-        )
       )}
 
       {/* Modals */}

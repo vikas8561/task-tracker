@@ -168,7 +168,47 @@ export default function TaskForm({ isOpen, onClose, onSaved, editTask }) {
       isOpen={isOpen}
       onClose={handleClose}
       title={editTask ? 'Edit Task' : 'New Task'}
-      size="lg"
+      size={step === 4 ? "lg" : "md"}
+      footer={
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={editTask ? handleClose : goPrev}
+            disabled={(step === 0 && !editTask) || saving}
+            style={{ minWidth: 100 }}
+          >
+            {editTask ? 'Cancel' : <><ChevronLeft size={15} /> Back</>}
+          </button>
+
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            {/* Steps 0-2: show Next */}
+            {step < 3 && (
+              <button
+                className="btn btn-primary"
+                onClick={goNext}
+                disabled={!canGoNext()}
+                id="wizard-next-btn"
+                style={{ minWidth: 100 }}
+              >
+                Next <ChevronRight size={15} />
+              </button>
+            )}
+            {/* Step 4 (skip/edit): show Save */}
+            {step === 4 && (
+              <button
+                className="btn btn-primary"
+                onClick={handleSave}
+                disabled={saving || !title.trim()}
+                id="task-save-btn"
+                style={{ minWidth: 120 }}
+              >
+                {saving ? 'Saving…' : editTask ? 'Update Task' : 'Create Task'}
+              </button>
+            )}
+            {/* Step 3: no Next — SubTopicSelector has its own Create button */}
+          </div>
+        </div>
+      }
     >
       {/* Wizard step indicator */}
       {!editTask && (
@@ -337,46 +377,6 @@ export default function TaskForm({ isOpen, onClose, onSaved, editTask }) {
           </label>
         </div>
       )}
-
-      {/* ── Footer navigation ─────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px solid var(--border-glass)', marginTop: 4 }}>
-        <button
-          className="btn btn-secondary"
-          onClick={editTask ? handleClose : goPrev}
-          disabled={(step === 0 && !editTask) || saving}
-          style={{ minWidth: 100 }}
-        >
-          {editTask ? 'Cancel' : <><ChevronLeft size={15} /> Back</>}
-        </button>
-
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          {/* Steps 0-2: show Next */}
-          {step < 3 && (
-            <button
-              className="btn btn-primary"
-              onClick={goNext}
-              disabled={!canGoNext()}
-              id="wizard-next-btn"
-              style={{ minWidth: 100 }}
-            >
-              Next <ChevronRight size={15} />
-            </button>
-          )}
-          {/* Step 4 (skip/edit): show Save */}
-          {step === 4 && (
-            <button
-              className="btn btn-primary"
-              onClick={handleSave}
-              disabled={saving || !title.trim()}
-              id="task-save-btn"
-              style={{ minWidth: 120 }}
-            >
-              {saving ? 'Saving…' : editTask ? 'Update Task' : 'Create Task'}
-            </button>
-          )}
-          {/* Step 3: no Next — SubTopicSelector has its own Create button */}
-        </div>
-      </div>
     </Modal>
   );
 }

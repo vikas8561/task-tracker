@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Plus, Search, X, Loader2 } from 'lucide-react';
 
 /**
@@ -32,13 +33,19 @@ export default function CustomDropdown({
   const [saving, setSaving] = useState(false);
 
   const rootRef = useRef(null);
+  const panelRef = useRef(null);
   const searchRef = useRef(null);
   const newNameRef = useRef(null);
+
+  const [panelStyle, setPanelStyle] = useState({});
 
   // Close on outside click
   useEffect(() => {
     function onMouseDown(e) {
-      if (rootRef.current && !rootRef.current.contains(e.target)) {
+      if (
+        rootRef.current && !rootRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) {
         setOpen(false);
         setSearch('');
         setCreating(false);
@@ -53,10 +60,67 @@ export default function CustomDropdown({
     if (open) setTimeout(() => searchRef.current?.focus(), 60);
   }, [open]);
 
-  // Focus new name input when entering create mode
+  // Position the panel using fixed coordinates, dynamically flipping if needed
+  const updatePosition = useCallback(() => {
+    if (open && rootRef.current && panelRef.current) {
+      const triggerRect = rootRef.current.getBoundingClientRect();
+      const panelRect = panelRef.current.getBoundingClientRect();
+      
+      const spaceBelow = window.innerHeight - triggerRect.bottom - 16;
+      const spaceAbove = triggerRect.top - 16;
+      const estimatedPanelHeight = panelRect.height || 280; // Estimated for ~5 items + search + create button
+
+      let top, maxHeight;
+      let isUpward = false;
+
+      // Decide if we should open upwards
+      if (spaceBelow < estimatedPanelHeight && spaceAbove > spaceBelow) {
+        isUpward = true;
+        maxHeight = spaceAbove;
+        top = triggerRect.top - 8 - Math.min(estimatedPanelHeight, maxHeight);
+      } else {
+        isUpward = false;
+        maxHeight = spaceBelow;
+        top = triggerRect.bottom + 8;
+      }
+
+      setPanelStyle({
+        position: 'fixed',
+        top: isUpward ? 'auto' : triggerRect.bottom + 8,
+        bottom: isUpward ? window.innerHeight - triggerRect.top + 8 : 'auto',
+        left: triggerRect.left,
+        width: triggerRect.width,
+        maxHeight: maxHeight,
+        zIndex: 999999,
+        display: 'flex',
+        flexDirection: 'column'
+      });
+    }
+  }, [open, items.length, search, creating]);
+
+  useLayoutEffect(() => {
+    updatePosition();
+    // A small delay to recalculate after panel renders its actual DOM
+    if (open) setTimeout(updatePosition, 10);
+  }, [open, updatePosition]);
+
+  // Close on modal scroll or window resize
   useEffect(() => {
-    if (creating) setTimeout(() => newNameRef.current?.focus(), 60);
-  }, [creating]);
+    function handleScroll(e) {
+      // Don't close if they are just scrolling the dropdown list itself
+      if (open && panelRef.current && !panelRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      window.addEventListener('scroll', handleScroll, true); // Use capture phase
+      window.addEventListener('resize', () => setOpen(false));
+      return () => {
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', () => setOpen(false));
+      };
+    }
+  }, [open]);
 
   const filtered = items.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
@@ -121,8 +185,8 @@ export default function CustomDropdown({
       </button>
 
       {/* Dropdown panel */}
-      {open && (
-        <div className="cdd-panel" onKeyDown={handleKeyDown}>
+      {open && createPortal(
+        <div className="cdd-panel" ref={panelRef} style={panelStyle} onKeyDown={handleKeyDown}>
           {/* Search */}
           <div className="cdd-search-row">
             <Search size={13} className="cdd-search-icon" />
@@ -230,7 +294,8 @@ export default function CustomDropdown({
               )}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`
@@ -247,35 +312,34 @@ export default function CustomDropdown({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 10px;
-          padding: 11px 14px;
-          background: var(--bg-input);
-          border: 1px solid var(--border-glass);
-          border-radius: var(--radius-md);
-          color: var(--text-primary);
-          font-size: 0.9rem;
+          gap: 12px;
+          padding: 14px 18px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          color: rgba(255, 255, 255, 0.95);
+          font-size: 0.95rem;
           font-family: inherit;
           cursor: pointer;
-          transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
           text-align: left;
         }
 
         .cdd-trigger:hover {
-          border-color: var(--border-glass-strong);
-          background: rgba(0,0,0,0.07);
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.2);
         }
 
         .cdd-trigger-open {
-          border-color: rgba(0,0,0,0.35) !important;
-          background: rgba(0,0,0,0.07);
-          box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
-          border-radius: var(--radius-md) var(--radius-md) 0 0;
+          border-color: var(--accent-1) !important;
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 0 0 4px rgba(255, 138, 0, 0.12);
         }
 
         .cdd-trigger-value {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
           font-weight: 500;
           flex: 1;
           min-width: 0;
@@ -285,7 +349,7 @@ export default function CustomDropdown({
         }
 
         .cdd-trigger-placeholder {
-          color: var(--text-muted);
+          color: rgba(255, 255, 255, 0.4);
           flex: 1;
           font-weight: 400;
         }
@@ -295,131 +359,136 @@ export default function CustomDropdown({
           height: 10px;
           border-radius: 50%;
           flex-shrink: 0;
+          box-shadow: 0 0 6px currentColor;
         }
 
         .cdd-chevron {
           flex-shrink: 0;
-          color: var(--text-muted);
-          transition: transform 200ms ease;
+          color: rgba(255, 255, 255, 0.4);
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
         }
-        .cdd-chevron-up { transform: rotate(180deg); }
+        .cdd-trigger:hover .cdd-chevron { color: rgba(255, 255, 255, 0.8); }
+        .cdd-trigger-open .cdd-chevron { transform: rotate(180deg); color: var(--accent-1); }
 
         /* ── Panel ────────────────────────────────── */
         .cdd-panel {
-          position: absolute;
-          top: calc(100% - 1px);
-          left: 0; right: 0;
-          background: var(--bg-tertiary);
-          border: 1px solid rgba(0,0,0,0.18);
-          border-top: none;
-          border-radius: 0 0 var(--radius-md) var(--radius-md);
-          box-shadow: 0 16px 48px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.08);
+          background: #1a1a1d;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
           z-index: 300;
-          overflow: hidden;
-          animation: cdd-panel-in 140ms ease;
+          overflow: hidden; /* important so contents don't bleed out of rounded corners */
+          animation: cdd-panel-fade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes cdd-panel-in {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @keyframes cdd-panel-fade {
+          from { opacity: 0; transform: scale(0.98); }
+          to   { opacity: 1; transform: scale(1); }
         }
 
         /* ── Search ───────────────────────────────── */
         .cdd-search-row {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 10px 14px;
-          border-bottom: 1px solid rgba(0,0,0,0.07);
+          gap: 12px;
+          padding: 14px 16px;
+          background: rgba(0, 0, 0, 0.2);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          flex-shrink: 0;
         }
 
-        .cdd-search-icon { color: var(--text-muted); flex-shrink: 0; }
+        .cdd-search-icon { color: rgba(255, 255, 255, 0.3); flex-shrink: 0; }
 
         .cdd-search-input {
           flex: 1;
           background: transparent;
           border: none;
           outline: none;
-          color: var(--text-primary);
-          font-size: 0.85rem;
+          color: #fff;
+          font-size: 0.95rem;
           font-family: inherit;
         }
-        .cdd-search-input::placeholder { color: var(--text-muted); }
+        .cdd-search-input::placeholder { color: rgba(255, 255, 255, 0.3); }
 
         .cdd-clear-btn {
-          background: none; border: none; cursor: pointer;
-          color: var(--text-muted); display: flex; align-items: center;
-          padding: 2px; border-radius: 4px;
-          transition: color 120ms;
+          background: rgba(255, 255, 255, 0.05); border: none; cursor: pointer;
+          color: rgba(255, 255, 255, 0.5); display: flex; align-items: center;
+          padding: 4px; border-radius: 50%;
+          transition: all 0.2s;
         }
-        .cdd-clear-btn:hover { color: var(--text-primary); }
+        .cdd-clear-btn:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
 
         /* ── List ─────────────────────────────────── */
         .cdd-list {
           list-style: none;
-          max-height: 200px;
+          flex: 1; /* allows list to shrink when panel hits max-height */
+          min-height: 50px;
+          max-height: 200px; /* Limits to ~5 items */
           overflow-y: auto;
-          padding: 6px;
+          padding: 8px;
           display: flex;
           flex-direction: column;
           gap: 2px;
         }
 
-        .cdd-list::-webkit-scrollbar { width: 4px; }
-        .cdd-list::-webkit-scrollbar-track { background: transparent; }
-        .cdd-list::-webkit-scrollbar-thumb { background: var(--border-glass-strong); border-radius: 99px; }
+        .cdd-list::-webkit-scrollbar { width: 6px; }
+        .cdd-list::-webkit-scrollbar-track { background: transparent; margin: 4px 0; }
+        .cdd-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+        .cdd-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
 
         .cdd-empty {
-          padding: 12px 10px;
-          font-size: 0.8rem;
-          color: var(--text-muted);
+          padding: 24px 20px;
+          font-size: 0.9rem;
+          color: rgba(255, 255, 255, 0.4);
           text-align: center;
-          font-style: italic;
         }
 
         .cdd-item {
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 9px 12px;
-          border-radius: var(--radius-sm);
+          gap: 12px;
+          padding: 10px 14px;
+          border-radius: 8px;
           cursor: pointer;
-          transition: background 120ms ease;
-          position: relative;
-          overflow: hidden;
+          transition: all 0.15s ease;
+          color: rgba(255, 255, 255, 0.8);
         }
 
         .cdd-item:hover {
-          background: rgba(0,0,0,0.06);
+          background: rgba(255, 255, 255, 0.05);
+          color: #fff;
         }
 
         .cdd-item-active {
-          background: rgba(0,0,0,0.1) !important;
+          background: rgba(255, 138, 0, 0.1) !important;
+          color: var(--accent-1) !important;
+          font-weight: 500;
         }
 
         .cdd-item-color {
-          width: 8px;
-          height: 8px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
           flex-shrink: 0;
+          box-shadow: 0 0 6px currentColor;
         }
 
         .cdd-item-name {
           flex: 1;
-          font-size: 0.875rem;
-          font-weight: 500;
-          color: var(--text-primary);
+          font-size: 0.9rem;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
-        .cdd-item-check { color: var(--success); flex-shrink: 0; }
+        .cdd-item-check { color: var(--accent-1); flex-shrink: 0; }
 
         /* ── Create section ───────────────────────── */
         .cdd-create-section {
-          border-top: 1px solid rgba(0,0,0,0.07);
-          padding: 8px 6px;
+          background: rgba(0, 0, 0, 0.15);
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 10px;
+          flex-shrink: 0; /* prevents create section from shrinking */
         }
 
         .cdd-create-btn {
@@ -427,53 +496,51 @@ export default function CustomDropdown({
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 8px 12px;
-          background: none;
+          padding: 10px 14px;
+          background: transparent;
           border: none;
-          border-radius: var(--radius-sm);
-          color: var(--text-muted);
-          font-size: 0.83rem;
+          border-radius: 8px;
+          color: var(--accent-1);
+          font-size: 0.9rem;
           font-weight: 500;
           font-family: inherit;
           cursor: pointer;
-          transition: background 120ms, color 120ms;
-          text-align: left;
+          transition: all 0.2s ease;
         }
         .cdd-create-btn:hover {
-          background: rgba(0,0,0,0.05);
-          color: var(--text-primary);
+          background: rgba(255, 138, 0, 0.1);
         }
 
         .cdd-create-form {
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          padding: 4px 6px 4px;
+          gap: 12px;
+          padding: 4px;
         }
 
         .cdd-create-input {
           width: 100%;
-          padding: 8px 12px;
-          background: rgba(0,0,0,0.06);
-          border: 1px solid rgba(0,0,0,0.15);
-          border-radius: var(--radius-sm);
-          color: var(--text-primary);
-          font-size: 0.875rem;
+          padding: 10px 14px;
+          background: rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          color: #fff;
+          font-size: 0.9rem;
           font-family: inherit;
           outline: none;
-          transition: border-color 150ms;
+          transition: border-color 0.2s;
         }
         .cdd-create-input:focus {
-          border-color: rgba(0,0,0,0.4);
+          border-color: var(--accent-1);
         }
-        .cdd-create-input::placeholder { color: var(--text-muted); }
+        .cdd-create-input::placeholder { color: rgba(255, 255, 255, 0.3); }
 
         /* Color swatches */
         .cdd-color-swatches {
           display: flex;
           flex-wrap: wrap;
-          gap: 6px;
-          padding: 2px 0;
+          gap: 8px;
+          padding: 4px 0;
         }
 
         .cdd-swatch {
@@ -482,30 +549,30 @@ export default function CustomDropdown({
           border-radius: 50%;
           border: 2px solid transparent;
           cursor: pointer;
-          transition: transform 120ms, border-color 120ms;
+          transition: transform 0.15s;
           padding: 0;
         }
-        .cdd-swatch:hover { transform: scale(1.2); }
+        .cdd-swatch:hover { transform: scale(1.15); }
         .cdd-swatch-sel {
           border-color: white;
           transform: scale(1.15);
-          box-shadow: 0 0 0 2px rgba(0,0,0,0.3);
         }
 
         /* Create actions */
         .cdd-create-actions {
           display: flex;
-          gap: 6px;
+          gap: 8px;
+          margin-top: 4px;
         }
 
         .cdd-save-btn {
           flex: 1;
-          padding: 7px 14px;
+          padding: 10px 14px;
           background: var(--accent-1);
           color: #ffffff;
           border: none;
-          border-radius: var(--radius-sm);
-          font-size: 0.8rem;
+          border-radius: 8px;
+          font-size: 0.9rem;
           font-weight: 600;
           font-family: inherit;
           cursor: pointer;
@@ -513,24 +580,26 @@ export default function CustomDropdown({
           align-items: center;
           justify-content: center;
           gap: 6px;
-          transition: background 120ms;
+          transition: background 0.2s;
         }
         .cdd-save-btn:hover { background: var(--accent-2); }
         .cdd-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .cdd-cancel-btn {
-          padding: 7px 14px;
-          background: rgba(0,0,0,0.05);
-          border: 1px solid rgba(0,0,0,0.1);
-          border-radius: var(--radius-sm);
-          color: var(--text-secondary);
-          font-size: 0.8rem;
+          flex: 1;
+          padding: 10px 14px;
+          background: transparent;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 8px;
+          color: #fff;
+          font-size: 0.9rem;
+          font-weight: 500;
           font-family: inherit;
           cursor: pointer;
-          transition: background 120ms;
+          transition: background 0.2s;
         }
-        .cdd-cancel-btn:hover { background: rgba(0,0,0,0.1); }
-        .cdd-cancel-btn:disabled { opacity: 0.5; }
+        .cdd-cancel-btn:hover { background: rgba(255, 255, 255, 0.05); }
+        .cdd-cancel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .cdd-spin { animation: cdd-rotate 0.8s linear infinite; }
         @keyframes cdd-rotate { to { transform: rotate(360deg); } }

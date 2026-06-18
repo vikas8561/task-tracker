@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import TopNav, { BottomNav } from './Sidebar';
 
-export default function Layout({ children, onAddTask, onImportClick, searchQuery, onSearchChange }) {
+export default function Layout({ children, onAddTask, onImportClick, onAddQuestion, onImportQuestion }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const isNotes = location.pathname.startsWith('/notes');
@@ -15,13 +15,11 @@ export default function Layout({ children, onAddTask, onImportClick, searchQuery
         onMenuToggle={() => setMobileOpen((v) => !v)}
         onAddTask={onAddTask}
         onImportClick={onImportClick}
-        searchQuery={searchQuery}
-        onSearchChange={onSearchChange}
+        onAddQuestion={onAddQuestion}
+        onImportQuestion={onImportQuestion}
       />
       <main className="app-main">
-        <div className="page-content">
-          {children}
-        </div>
+        {children}
       </main>
       <BottomNav />
     </div>

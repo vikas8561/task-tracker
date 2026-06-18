@@ -11,6 +11,7 @@ import TaskForm from './components/Tasks/TaskForm';
 import AuthScreen from './components/Auth/AuthScreen';
 import NamePromptCard from './components/Auth/NamePromptCard';
 import NotesView from './components/Notes/NotesView';
+import QuestionsView from './components/Questions/QuestionsView';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -20,9 +21,10 @@ import CelebrationOverlay from './components/common/CelebrationOverlay';
 
 function PrivateApp() {
   const { user, loading, needsDisplayName, saveDisplayName } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [showQuestionImport, setShowQuestionImport] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
@@ -37,26 +39,38 @@ function PrivateApp() {
       <Layout
         onAddTask={() => setShowTaskForm(true)}
         onImportClick={() => setShowImport(true)}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onAddQuestion={() => setShowQuestionForm(true)}
+        onImportQuestion={() => setShowQuestionImport(true)}
       >
         <Routes>
-          <Route path="/" element={<Dashboard refreshKey={refreshKey} />} />
+          <Route path="/" element={<div className="page-content"><Dashboard refreshKey={refreshKey} /></div>} />
           <Route
             path="/tasks"
             element={
-              <TaskList
-                searchQuery={searchQuery}
-                showFormProp={showTaskForm}
-                onFormClose={() => setShowTaskForm(false)}
-                refreshKey={refreshKey}
+              <div className="page-content">
+                <TaskList
+                  showFormProp={showTaskForm}
+                  onFormClose={() => setShowTaskForm(false)}
+                  refreshKey={refreshKey}
+                />
+              </div>
+            }
+          />
+          <Route path="/progress" element={<div className="page-content"><ProgressView /></div>} />
+          <Route path="/revision" element={<div className="page-content"><RevisionView /></div>} />
+          <Route path="/notes" element={<NotesView />} />
+          <Route path="/notes/:slug" element={<NotesView />} />
+          <Route
+            path="/questions"
+            element={
+              <QuestionsView
+                showFormProp={showQuestionForm}
+                onFormClose={() => setShowQuestionForm(false)}
+                showImportProp={showQuestionImport}
+                onImportClose={() => setShowQuestionImport(false)}
               />
             }
           />
-          <Route path="/progress" element={<ProgressView />} />
-          <Route path="/revision" element={<RevisionView />} />
-          <Route path="/notes" element={<NotesView />} />
-          <Route path="/notes/:slug" element={<NotesView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

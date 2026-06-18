@@ -8,8 +8,20 @@ export async function fetchSubjects() {
     .select('*')
     .order('created_at', { ascending: true })
     .limit(1000);
-  if (error) throw error;
-  return data;
+  if (error) {
+    if (
+      error.code === '42P01' || 
+      error.code === 'PGRST204' || 
+      error.code === 'PGRST106' || 
+      error.message?.includes('404') || 
+      error.details?.includes('does not exist') ||
+      error.message?.includes('does not exist')
+    ) {
+      return [];
+    }
+    throw error;
+  }
+  return data || [];
 }
 
 export async function createSubject(name, color = '#ff8a00') {
@@ -27,7 +39,7 @@ export async function updateSubject(id, updates) {
     .from('subjects')
     .update(updates)
     .eq('id', id)
-        .select()
+    .select()
     .single();
   if (error) throw error;
   return data;
@@ -47,7 +59,7 @@ export async function getOrCreateSubject(name, color = '#ff8a00') {
   const { data: existing } = await supabase
     .from('subjects')
     .select('*')
-        .ilike('name', name)
+    .ilike('name', name)
     .single();
   if (existing) return existing;
   return createSubject(name, color);

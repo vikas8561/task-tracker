@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { calculateStreak } from '../utils/streakCalculator';
 import { normalizeSubjectColor } from '../utils/subjectColor';
 import { fetchTasks } from './useTasks';
+import { getCurrentUser } from '../lib/localAuth';
 
 // Safe query wrapper — returns fallback value instead of throwing on DB errors
 async function safeQuery(fn, fallback) {
@@ -14,22 +15,47 @@ async function safeQuery(fn, fallback) {
 
 export async function fetchDashboardStats() {
   const todayStr = new Date().toISOString().split('T')[0];
-  const allTasks = await safeQuery(() => fetchTasks(), []);
+  const user = getCurrentUser();
 
-  const totalTasks = allTasks.length;
-  const todaysTasks = allTasks.filter(t => t.due_date === todayStr).length;
-  const completedTasksData = allTasks.filter(t => t.is_completed);
-  const completedTasks = completedTasksData.length;
-  const completedTimestamps = completedTasksData.map(t => t.completed_at).filter(Boolean);
+  // Get true total tasks
+  const { count: totalTasks, error: tError } = await supabase
+    .from('tasks')
+    .select('id', { count: 'exact', head: true });
+
+  // Get true todays tasks
+  const { count: todaysTasks, error: todayError } = await supabase
+    .from('tasks')
+    .select('id', { count: 'exact', head: true })
+    .eq('due_date', todayStr);
+
+  let completedTasks = 0;
+  let completedTimestamps = [];
+  
+  if (user) {
+    const { data: states, error: sError } = await supabase
+      .from('user_task_states')
+      .select('completed_at')
+      .eq('user_id', user.id)
+      .eq('is_completed', true);
+      
+    if (!sError && states) {
+      completedTasks = states.length;
+      completedTimestamps = states.map(s => s.completed_at).filter(Boolean);
+    }
+  }
+
   const streak = calculateStreak(completedTimestamps);
 
+  const finalTotal = totalTasks || 0;
+  const finalTodays = todaysTasks || 0;
+
   return {
-    totalTasks,
+    totalTasks: finalTotal,
     completedTasks,
-    todaysTasks,
+    todaysTasks: finalTodays,
     streak,
     completedTimestamps,
-    overallProgress: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+    overallProgress: finalTotal > 0 ? Math.round((completedTasks / finalTotal) * 100) : 0,
   };
 }
 
