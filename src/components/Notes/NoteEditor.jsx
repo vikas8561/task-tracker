@@ -1,7 +1,25 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Bold, Italic, Heading1, Heading2, Heading3, Code, Link2, Image, List, ListOrdered, CheckSquare, Table, Quote, FileCode, Minus, Pilcrow } from 'lucide-react';
+import {
+  Bold, Italic, Heading1, Heading2, Heading3, Code, Link2, Image,
+  List, ListOrdered, CheckSquare, Table, Quote, FileCode, Minus, Pilcrow,
+  Pencil, Lightbulb, AlertCircle, TriangleAlert, Flame,
+  Info, CircleCheck, CircleHelp, CircleX, Bug, FlaskConical,
+  ClipboardList, BookOpen, Sigma, GraduationCap,
+  CheckCheck, ShieldAlert, Zap, Brain, Star, Cpu, BarChart3,
+  Microscope, MessageSquare, RotateCcw, Flag, ChevronDown,
+} from 'lucide-react';
+import { CALLOUT_GROUPS, CALLOUT_CONFIG } from './calloutTypes';
 
 const WIKI_LINK_TRIGGER = '[[';
+
+/** Map icon name strings to Lucide components for the picker */
+const ICON_MAP = {
+  Pencil, Lightbulb, AlertCircle, TriangleAlert, Flame,
+  Info, CircleCheck, CircleHelp, CircleX, Bug, FlaskConical,
+  Quote, ClipboardList, BookOpen, Sigma, GraduationCap,
+  CheckCheck, ShieldAlert, Zap, Brain, Star, Cpu, BarChart3,
+  Microscope, MessageSquare, RotateCcw, Flag,
+};
 
 export default function NoteEditor({
   title,
@@ -21,12 +39,30 @@ export default function NoteEditor({
   const [wikiPos, setWikiPos] = useState({ top: 0, left: 0 });
   const [wikiCursorPos, setWikiCursorPos] = useState(null);
   const [wikiSelected, setWikiSelected] = useState(0);
+  const [showCalloutPicker, setShowCalloutPicker] = useState(false);
+  const calloutBtnRef = useRef(null);
+  const calloutPickerRef = useRef(null);
   const autoSaveTimer = useRef(null);
 
   // ── Filtered notes for wiki-link popup ────────────────────────────────────
   const filteredNotes = notes.filter((n) =>
     n.title.toLowerCase().includes(wikiQuery.toLowerCase())
   ).slice(0, 8);
+
+  // ── Close callout picker on outside click ─────────────────────────────────
+  useEffect(() => {
+    if (!showCalloutPicker) return;
+    const handleClick = (e) => {
+      if (
+        calloutPickerRef.current && !calloutPickerRef.current.contains(e.target) &&
+        calloutBtnRef.current && !calloutBtnRef.current.contains(e.target)
+      ) {
+        setShowCalloutPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showCalloutPicker]);
 
   // ── Insert text at cursor ──────────────────────────────────────────────────
   const insertAtCursor = useCallback((before, after = '', placeholder = '') => {
@@ -43,6 +79,13 @@ export default function NoteEditor({
       ta.focus();
     });
   }, [value, onChange]);
+
+  // ── Insert callout of specific type ────────────────────────────────────────
+  const insertCallout = useCallback((type) => {
+    const upperType = type.toUpperCase();
+    insertAtCursor(`> [!${upperType}]\n> `, '', 'Content');
+    setShowCalloutPicker(false);
+  }, [insertAtCursor]);
 
   // ── Toolbar actions ────────────────────────────────────────────────────────
   const toolbarActions = [
@@ -61,7 +104,7 @@ export default function NoteEditor({
     { icon: ListOrdered,  label: 'Ordered list',  action: () => insertAtCursor('1. ', '', 'List item') },
     { icon: CheckSquare,  label: 'Task list',     action: () => insertAtCursor('- [ ] ', '', 'Task item') },
     { icon: Table,        label: 'Table',         action: () => insertAtCursor('\n| Column 1 | Column 2 |\n|----------|----------|\n| Cell     | Cell     |\n', '') },
-    { icon: Quote,        label: 'Callout',       action: () => insertAtCursor('> [!NOTE]\n> ', '', 'Callout content') },
+    'callout', // special marker for the callout picker button
     { icon: Minus,        label: 'Divider',       action: () => insertAtCursor('\n---\n', '') },
     { icon: Pilcrow,      label: 'Math',          action: () => insertAtCursor('$$\n', '\n$$', 'LaTeX math') },
   ];
@@ -240,10 +283,58 @@ export default function NoteEditor({
       {/* Toolbar */}
       {!readOnly && (
         <div className="editor-toolbar">
-          {toolbarActions.map((action, i) =>
-            action === null ? (
-              <div key={`sep-${i}`} className="editor-toolbar-sep" />
-            ) : (
+          {toolbarActions.map((action, i) => {
+            if (action === null) {
+              return <div key={`sep-${i}`} className="editor-toolbar-sep" />;
+            }
+
+            // Special callout picker button
+            if (action === 'callout') {
+              return (
+                <div key="callout-picker" className="callout-picker-wrapper" style={{ position: 'relative' }}>
+                  <button
+                    ref={calloutBtnRef}
+                    className={`editor-toolbar-btn ${showCalloutPicker ? 'active' : ''}`}
+                    title="Insert Callout"
+                    onClick={(e) => { e.preventDefault(); setShowCalloutPicker((v) => !v); }}
+                    type="button"
+                  >
+                    <Quote size={15} />
+                    <ChevronDown size={10} style={{ marginLeft: 1, opacity: 0.6 }} />
+                  </button>
+
+                  {showCalloutPicker && (
+                    <div ref={calloutPickerRef} className="callout-picker-dropdown">
+                      {CALLOUT_GROUPS.map((group) => (
+                        <div key={group.label} className="callout-picker-group">
+                          <div className="callout-picker-group-label">{group.label}</div>
+                          {group.types.map((type) => {
+                            const cfg = CALLOUT_CONFIG[type];
+                            if (!cfg) return null;
+                            const IconComp = ICON_MAP[cfg.icon];
+                            return (
+                              <button
+                                key={type}
+                                className="callout-picker-item"
+                                onClick={(e) => { e.preventDefault(); insertCallout(type); }}
+                                type="button"
+                              >
+                                <span className="callout-picker-item-icon" style={{ color: cfg.color }}>
+                                  {IconComp ? <IconComp size={14} /> : '📝'}
+                                </span>
+                                <span className="callout-picker-item-label">{cfg.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
               <button
                 key={action.label}
                 className="editor-toolbar-btn"
@@ -253,8 +344,8 @@ export default function NoteEditor({
               >
                 <action.icon size={15} />
               </button>
-            )
-          )}
+            );
+          })}
 
           {onImageUpload && (
             <>

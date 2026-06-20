@@ -11,9 +11,10 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeRaw from 'rehype-raw';
 import { Link } from 'react-router-dom';
 import MermaidBlock from './MermaidBlock';
-import CalloutBlock, { parseCallout } from './CalloutBlock';
+import CalloutBlock from './CalloutBlock';
 import NoteEmbed from './NoteEmbed';
 import { themeSvgForDark, makeSvgResponsive } from '../../utils/svgTheme';
+import remarkCallouts from '../../plugins/remarkCallouts';
 
 // Remark plugin to handle wiki-links: [[Title]] [[Title|Alias]] [[Title#heading]]
 function remarkWikiLinks() {
@@ -113,9 +114,56 @@ function makeComponents(onLinkClick) {
       );
     },
 
-    // Blockquotes: detect Obsidian callouts
+    // Blockquotes: only for non-callout blockquotes (callouts are handled by div[data-callout])
     blockquote({ children }) {
-      return <CalloutBlock>{children}</CalloutBlock>;
+      return (
+        <blockquote className="md-blockquote">
+          {children}
+        </blockquote>
+      );
+    },
+
+    // Div handler: detect callout divs produced by remarkCallouts plugin
+    div({ node, children, ...props }) {
+      // react-markdown may pass data attributes as camelCase (dataCallout) or kebab-case (data-callout)
+      const calloutType =
+        node?.properties?.dataCallout ||
+        node?.properties?.['data-callout'] ||
+        props.dataCallout ||
+        props['data-callout'];
+
+      if (calloutType) {
+        const customTitle =
+          node?.properties?.dataCalloutTitle ||
+          node?.properties?.['data-callout-title'] ||
+          props.dataCalloutTitle ||
+          props['data-callout-title'] ||
+          '';
+        const foldable =
+          node?.properties?.dataCalloutFoldable ||
+          node?.properties?.['data-callout-foldable'] ||
+          props.dataCalloutFoldable ||
+          props['data-callout-foldable'];
+        const defaultFolded =
+          node?.properties?.dataCalloutFolded ||
+          node?.properties?.['data-callout-folded'] ||
+          props.dataCalloutFolded ||
+          props['data-callout-folded'];
+
+        return (
+          <CalloutBlock
+            type={calloutType}
+            title={customTitle}
+            foldable={foldable}
+            defaultFolded={defaultFolded}
+          >
+            {children}
+          </CalloutBlock>
+        );
+      }
+
+      // Pass through other divs (e.g., md-diagram)
+      return <div {...props}>{children}</div>;
     },
 
     // Anchor tags: handle wiki-links and internal routing
@@ -180,6 +228,7 @@ function makeComponents(onLinkClick) {
 const remarkPlugins = [
   remarkGfm,
   remarkMath,
+  remarkCallouts,
   remarkBreaks,
   [remarkToc, { heading: 'table of contents', tight: true }],
   remarkWikiLinks,

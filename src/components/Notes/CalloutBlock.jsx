@@ -1,97 +1,120 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Pencil, Lightbulb, AlertCircle, TriangleAlert, Flame,
+  Info, CircleCheck, CircleHelp, CircleX, Bug, FlaskConical,
+  Quote, ClipboardList, BookOpen, Sigma, GraduationCap,
+  CheckCheck, ShieldAlert, Zap, Brain, Star, Cpu, BarChart3,
+  Microscope, MessageSquare, RotateCcw, Flag, ChevronDown,
+} from 'lucide-react';
+import { resolveCalloutType } from './calloutTypes';
 
-const CALLOUT_TYPES = {
-  note: { icon: '📝', color: '#ffaa00', bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.3)', label: 'Note' },
-  info: { icon: 'ℹ️', color: '#e85d75', bg: 'rgba(232,93,117,0.08)', border: 'rgba(232,93,117,0.3)', label: 'Info' },
-  tip: { icon: '💡', color: '#ff9f43', bg: 'rgba(255,159,67,0.08)', border: 'rgba(255,159,67,0.3)', label: 'Tip' },
-  success: { icon: '✅', color: '#ff9f43', bg: 'rgba(255,159,67,0.08)', border: 'rgba(255,159,67,0.3)', label: 'Success' },
-  warning: { icon: '⚠️', color: '#ffaa00', bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.3)', label: 'Warning' },
-  caution: { icon: '🔥', color: '#ff6b35', bg: 'rgba(255,107,53,0.08)', border: 'rgba(255,107,53,0.3)', label: 'Caution' },
-  danger: { icon: '❌', color: '#da1b60', bg: 'rgba(218,27,96,0.08)', border: 'rgba(218,27,96,0.3)', label: 'Danger' },
-  bug: { icon: '🐛', color: '#da1b60', bg: 'rgba(218,27,96,0.08)', border: 'rgba(218,27,96,0.3)', label: 'Bug' },
-  failure: { icon: '💥', color: '#da1b60', bg: 'rgba(218,27,96,0.08)', border: 'rgba(218,27,96,0.3)', label: 'Failure' },
-  question: { icon: '❓', color: '#ffaa00', bg: 'rgba(255,170,0,0.08)', border: 'rgba(255,170,0,0.3)', label: 'Question' },
-  abstract: { icon: '📋', color: '#e85d75', bg: 'rgba(232,93,117,0.08)', border: 'rgba(232,93,117,0.3)', label: 'Abstract' },
-  summary: { icon: '📋', color: '#e85d75', bg: 'rgba(232,93,117,0.08)', border: 'rgba(232,93,117,0.3)', label: 'Summary' },
-  todo: { icon: '☑️', color: '#ff9f43', bg: 'rgba(255,159,67,0.08)', border: 'rgba(255,159,67,0.3)', label: 'Todo' },
-  example: { icon: '🧪', color: '#ff8a00', bg: 'rgba(255,138,0,0.08)', border: 'rgba(255,138,0,0.3)', label: 'Example' },
-  quote: { icon: '💬', color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.3)', label: 'Quote' },
-  important: { icon: '❗', color: '#da1b60', bg: 'rgba(218,27,96,0.08)', border: 'rgba(218,27,96,0.3)', label: 'Important' },
+/** Map icon name strings to Lucide components */
+const ICON_MAP = {
+  Pencil, Lightbulb, AlertCircle, TriangleAlert, Flame,
+  Info, CircleCheck, CircleHelp, CircleX, Bug, FlaskConical,
+  Quote, ClipboardList, BookOpen, Sigma, GraduationCap,
+  CheckCheck, ShieldAlert, Zap, Brain, Star, Cpu, BarChart3,
+  Microscope, MessageSquare, RotateCcw, Flag,
 };
 
 /**
- * Parse Obsidian callout from blockquote children text.
- * Returns { type, foldable, defaultFolded, title, body } or null
+ * CalloutBlock — renders a visually distinct callout component.
+ *
+ * When used with the remarkCallouts remark plugin, this receives its
+ * props via data attributes on the wrapper div:
+ *   data-callout="formula"
+ *   data-callout-title="Custom Title"
+ *   data-callout-foldable="true"
+ *   data-callout-folded="true"
+ *
+ * Children are already-rendered React elements (paragraphs, code blocks,
+ * KaTeX math, mermaid diagrams, etc.).
  */
-export function parseCallout(children) {
-  // Flatten children to get the raw text content
-  const getTextContent = (node) => {
-    if (typeof node === 'string') return node;
-    if (Array.isArray(node)) return node.map(getTextContent).join('');
-    if (node?.props?.children) return getTextContent(node.props.children);
-    return '';
+export default function CalloutBlock({
+  type: typeProp,
+  title: titleProp,
+  foldable: foldableProp,
+  defaultFolded: defaultFoldedProp,
+  children,
+}) {
+  const { resolvedType, config } = resolveCalloutType(typeProp);
+  const IconComponent = ICON_MAP[config.icon] || Pencil;
+  const title = titleProp || config.label;
+  const foldable = foldableProp === true || foldableProp === 'true';
+  const defaultFolded = defaultFoldedProp === true || defaultFoldedProp === 'true';
+
+  const [folded, setFolded] = useState(defaultFolded);
+  const bodyRef = useRef(null);
+  const [bodyHeight, setBodyHeight] = useState('auto');
+
+  // Measure body height for smooth animation
+  useEffect(() => {
+    if (bodyRef.current) {
+      setBodyHeight(bodyRef.current.scrollHeight + 'px');
+    }
+  }, [children]);
+
+  const handleToggle = () => {
+    if (!foldable) return;
+    setFolded((f) => !f);
   };
 
-  const raw = getTextContent(children);
-  const firstLine = raw.split('\n')[0];
-  const match = firstLine.match(/^\[!(\w+)\](-|\+)?\s*(.*)?$/i);
-  if (!match) return null;
-
-  const type = match[1].toLowerCase();
-  const foldChar = match[2];
-  const foldable = !!foldChar;
-  const defaultFolded = foldChar === '-';
-  const titleOverride = match[3]?.trim() || '';
-
-  const config = CALLOUT_TYPES[type] || CALLOUT_TYPES.note;
-  const title = titleOverride || config.label;
-  const rest = raw.split('\n').slice(1).join('\n').trim();
-
-  return { type, foldable, defaultFolded, title, body: rest, config };
-}
-
-export default function CalloutBlock({ children }) {
-  const parsed = parseCallout(children);
-
-  if (!parsed) {
-    // Regular blockquote
-    return (
-      <blockquote className="md-blockquote">
-        {children}
-      </blockquote>
-    );
-  }
-
-  const { type, foldable, defaultFolded, title, body, config } = parsed;
-  const [folded, setFolded] = useState(defaultFolded);
+  const handleKeyDown = (e) => {
+    if (!foldable) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleToggle();
+    }
+  };
 
   return (
     <div
-      className="callout-block"
-      data-callout={type}
+      className={`callout-block callout-type-${resolvedType}`}
+      data-callout={resolvedType}
       style={{
-        '--callout-color': config.color,
+        '--callout-accent': config.color,
         '--callout-bg': config.bg,
         '--callout-border': config.border,
       }}
     >
       <div
         className={`callout-header ${foldable ? 'callout-foldable' : ''}`}
-        onClick={foldable ? () => setFolded((f) => !f) : undefined}
+        onClick={foldable ? handleToggle : undefined}
+        onKeyDown={foldable ? handleKeyDown : undefined}
+        role={foldable ? 'button' : undefined}
+        tabIndex={foldable ? 0 : undefined}
+        aria-expanded={foldable ? !folded : undefined}
       >
-        <span className="callout-icon">{config.icon}</span>
+        <span className="callout-icon" aria-hidden="true">
+          <IconComponent size={16} strokeWidth={2.2} />
+        </span>
         <span className="callout-title">{title}</span>
         {foldable && (
-          <span className={`callout-fold-arrow ${folded ? 'folded' : ''}`}>
-            ▼
+          <span
+            className={`callout-fold-indicator ${folded ? 'callout-folded' : ''}`}
+            aria-hidden="true"
+          >
+            <ChevronDown size={14} />
           </span>
         )}
       </div>
-      {(!foldable || !folded) && body && (
-        <div className="callout-body">
-          {body}
+      <div
+        ref={bodyRef}
+        className="callout-body"
+        style={
+          foldable
+            ? {
+                maxHeight: folded ? '0px' : bodyHeight,
+                opacity: folded ? 0 : 1,
+                overflow: 'hidden',
+              }
+            : undefined
+        }
+      >
+        <div className="callout-body-inner">
+          {children}
         </div>
-      )}
+      </div>
     </div>
   );
 }
