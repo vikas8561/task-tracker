@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, FolderOpen, Folder, Plus, MoreVertical, Pencil, Trash2, FileText, Pin, Archive } from 'lucide-react';
+import { ChevronRight, ChevronDown, FolderOpen, Folder, Plus, MoreVertical, Pencil, Trash2, FileText, Pin, Archive, EyeOff, Eye } from 'lucide-react';
 import { buildFolderTree } from '../../lib/notesEngine';
 import { useAuth } from '../../context/AuthContext';
 
@@ -72,6 +72,7 @@ function FolderNode({
   onDeleteNote,
   onTogglePin,
   onToggleArchive,
+  onToggleHide,
 }) {
   const { isAdmin } = useAuth();
   const [expanded, setExpanded] = useState(depth === 0);
@@ -88,7 +89,7 @@ function FolderNode({
   };
 
   return (
-    <div className="obs-tree-node">
+    <div className={`obs-tree-node ${folder.is_hidden ? 'obs-tree-node--hidden' : ''}`}>
       {/* Folder row */}
       <div
         className={`obs-tree-row ${selectedFolderId === folder.id ? 'folder-selected' : ''}`}
@@ -111,6 +112,13 @@ function FolderNode({
 
         <span className="obs-tree-label">{folder.name}</span>
 
+        {/* Hidden indicator badge (admin only) */}
+        {isAdmin && folder.is_hidden && (
+          <span className="obs-tree-hidden-badge" title="Hidden from users">
+            <EyeOff size={11} />
+          </span>
+        )}
+
         {/* Context actions */}
         {isAdmin && (
           <div className="obs-tree-actions" onClick={(e) => e.stopPropagation()}>
@@ -131,6 +139,11 @@ function FolderNode({
                 </button>
                 <button className="obs-tree-menu-item" onClick={() => { onRenameFolder(folder); setShowMenu(false); }}>
                   <Pencil size={12} /> Rename
+                </button>
+                <div className="obs-tree-menu-sep" />
+                <button className="obs-tree-menu-item" onClick={() => { onToggleHide(folder); setShowMenu(false); }}>
+                  {folder.is_hidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                  {folder.is_hidden ? 'Unhide' : 'Hide from users'}
                 </button>
                 <div className="obs-tree-menu-sep" />
                 <button className="obs-tree-menu-item danger" onClick={() => { onDeleteFolder(folder.id); setShowMenu(false); }}>
@@ -162,6 +175,7 @@ function FolderNode({
               onDeleteNote={onDeleteNote}
               onTogglePin={onTogglePin}
               onToggleArchive={onToggleArchive}
+              onToggleHide={onToggleHide}
             />
           ))}
           {folderNotes.map((note) => (
@@ -197,15 +211,21 @@ export default function FolderTree({
   onDeleteNote,
   onTogglePin,
   onToggleArchive,
+  onToggleHide,
   onSelectAll,
 }) {
-  const tree = buildFolderTree(folders, notes);
+  const { isAdmin } = useAuth();
+
+  // Filter hidden folders for non-admin users
+  const visibleFolders = isAdmin ? folders : folders.filter((f) => !f.is_hidden);
+
+  const tree = buildFolderTree(visibleFolders, notes);
 
   // Root-level folders (no parent)
   const rootFolders = tree; // buildFolderTree already returns root-level folders
 
   // Notes not belonging to any folder
-  const folderIds = new Set(folders.map((f) => f.id));
+  const folderIds = new Set(visibleFolders.map((f) => f.id));
   const unfolderedNotes = notes.filter((n) => !n.folder_id || !folderIds.has(n.folder_id));
 
   // Merge folders and unfoldered notes, sort by created_at ascending
@@ -234,6 +254,7 @@ export default function FolderTree({
             onDeleteNote={onDeleteNote}
             onTogglePin={onTogglePin}
             onToggleArchive={onToggleArchive}
+            onToggleHide={onToggleHide}
           />
         ) : (
           <NoteRow

@@ -9,6 +9,7 @@ import { CheckSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import LoadingScreen from '../common/LoadingScreen';
+import { supabase } from '../../lib/supabase';
 
 export default function TaskList({ onAddTask, showFormProp, onFormClose, editTaskProp, refreshKey }) {
   const { isAdmin } = useAuth();
@@ -118,7 +119,58 @@ export default function TaskList({ onAddTask, showFormProp, onFormClose, editTas
     }
   }
 
-  const hasSubjects = (hierarchy?.subjects?.length ?? 0) > 0;
+  // ── Hide/Unhide handlers ──────────────────────────────────────────────────
+  async function handleHideSubject(subject) {
+    try {
+      const newValue = !subject.is_hidden;
+      const { error } = await supabase
+        .from('subjects')
+        .update({ is_hidden: newValue })
+        .eq('id', subject.id);
+      if (error) throw error;
+
+      setHierarchy(prev => ({
+        ...prev,
+        subjects: prev.subjects.map(s =>
+          s.id === subject.id ? { ...s, is_hidden: newValue } : s
+        ),
+      }));
+      toast.success(newValue ? 'Subject hidden from users' : 'Subject is now visible');
+    } catch {
+      toast.error('Failed to update subject visibility');
+    }
+  }
+
+  async function handleHideChapter(chapter) {
+    try {
+      const newValue = !chapter.is_hidden;
+      const { error } = await supabase
+        .from('chapters')
+        .update({ is_hidden: newValue })
+        .eq('id', chapter.id);
+      if (error) throw error;
+
+      setHierarchy(prev => ({
+        ...prev,
+        chapters: prev.chapters.map(c =>
+          c.id === chapter.id ? { ...c, is_hidden: newValue } : c
+        ),
+      }));
+      toast.success(newValue ? 'Chapter hidden from users' : 'Chapter is now visible');
+    } catch {
+      toast.error('Failed to update chapter visibility');
+    }
+  }
+
+  // Filter hidden subjects/chapters for non-admin users
+  const visibleSubjects = hierarchy
+    ? (isAdmin ? hierarchy.subjects : hierarchy.subjects.filter(s => !s.is_hidden))
+    : [];
+  const visibleChapters = hierarchy
+    ? (isAdmin ? hierarchy.chapters : hierarchy.chapters.filter(c => !c.is_hidden))
+    : [];
+
+  const hasSubjects = visibleSubjects.length > 0;
 
   return (
     <div className="task-page">
@@ -144,8 +196,8 @@ export default function TaskList({ onAddTask, showFormProp, onFormClose, editTas
       {/* Hierarchy view */}
       {!loading && hasSubjects && (
         <HierarchyTaskView
-          subjects={hierarchy.subjects}
-          chapters={hierarchy.chapters}
+          subjects={visibleSubjects}
+          chapters={visibleChapters}
           topics={hierarchy.topics}
           chapterTaskCount={hierarchy.chapterTaskCount}
           topicTaskCount={hierarchy.topicTaskCount}
@@ -154,6 +206,8 @@ export default function TaskList({ onAddTask, showFormProp, onFormClose, editTas
           onUpdated={handleTaskUpdated}
           onEdit={(t) => { setEditTask(t); setShowForm(true); }}
           onDelete={setDeleteTarget}
+          onHideSubject={isAdmin ? handleHideSubject : undefined}
+          onHideChapter={isAdmin ? handleHideChapter : undefined}
         />
       )}
 

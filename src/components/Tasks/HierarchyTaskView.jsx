@@ -15,6 +15,8 @@ import {
   Link2,
   X,
   Loader2,
+  EyeOff,
+  Eye,
 } from 'lucide-react';
 import { toggleComplete, toggleRevision, reorderTasks, updateTask } from '../../hooks/useTasks';
 import { normalizeSubjectColor } from '../../utils/subjectColor';
@@ -345,7 +347,9 @@ function ChapterFolder({
   topicTaskCount, chapterTaskCount,
   loadedChapters, onLoadChapter,
   onUpdated, onEdit, onDelete,
+  onHideChapter,
 }) {
+  const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
 
   const chapterEntry = loadedChapters[chapter.id]; // undefined | 'loading' | Task[]
@@ -379,31 +383,48 @@ function ChapterFolder({
   }, [chapterEntry, isLoaded]);
 
   return (
-    <div className="htv-chapter">
-      <button
-        className={`htv-chapter-header ${open ? 'htv-chapter-open' : ''}`}
-        onClick={handleToggle}
-        id={`htv-chapter-${chapter.id}`}
-      >
-        <span className="htv-folder-icon">
-          {isLoading
-            ? <Loader2 size={16} className="htv-loading-spin" />
-            : open
-              ? <FolderOpen size={16} />
-              : <Folder size={16} />
-          }
-        </span>
-        <span className="htv-chapter-name">{chapter.name}</span>
-        <span className="htv-chapter-meta">
-          {isLoaded
-            ? `${done}/${total} · ${pct}% done`
-            : `${total} task${total !== 1 ? 's' : ''}`
-          }
-        </span>
-        <span className="htv-chapter-chevron">
-          {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-        </span>
-      </button>
+    <div className={`htv-chapter ${chapter.is_hidden ? 'htv-hidden-item' : ''}`}>
+      <div className="htv-chapter-header-wrap">
+        <button
+          className={`htv-chapter-header ${open ? 'htv-chapter-open' : ''}`}
+          onClick={handleToggle}
+          id={`htv-chapter-${chapter.id}`}
+        >
+          <span className="htv-folder-icon">
+            {isLoading
+              ? <Loader2 size={16} className="htv-loading-spin" />
+              : open
+                ? <FolderOpen size={16} />
+                : <Folder size={16} />
+            }
+          </span>
+          <span className="htv-chapter-name">{chapter.name}</span>
+          {isAdmin && chapter.is_hidden && (
+            <span className="htv-hidden-badge" title="Hidden from users">
+              <EyeOff size={12} />
+            </span>
+          )}
+          <span className="htv-chapter-meta">
+            {isLoaded
+              ? `${done}/${total} · ${pct}% done`
+              : `${total} task${total !== 1 ? 's' : ''}`
+            }
+          </span>
+          <span className="htv-chapter-chevron">
+            {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+          </span>
+        </button>
+        {isAdmin && onHideChapter && (
+          <button
+            className="htv-hide-btn"
+            onClick={(e) => { e.stopPropagation(); onHideChapter(chapter); }}
+            title={chapter.is_hidden ? 'Unhide chapter' : 'Hide from users'}
+            id={`htv-hide-chapter-${chapter.id}`}
+          >
+            {chapter.is_hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+          </button>
+        )}
+      </div>
 
       {open && (
         <div className="htv-chapter-body">
@@ -445,7 +466,9 @@ function SubjectFolder({
   topicsByChapter, topicTaskCount, chapterTaskCount,
   loadedChapters, onLoadChapter,
   onUpdated, onEdit, onDelete,
+  onHideSubject, onHideChapter,
 }) {
+  const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
 
   // Mix loaded task counts with metadata counts for unloaded chapters
@@ -467,40 +490,58 @@ function SubjectFolder({
   const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className="htv-subject" style={{ '--subject-color': subject.color }}>
+    <div className={`htv-subject ${subject.is_hidden ? 'htv-hidden-item' : ''}`} style={{ '--subject-color': subject.color }}>
       <div className="htv-subject-accent" style={{ background: subject.color }} />
 
-      <button
-        className={`htv-subject-header ${open ? 'htv-subject-open' : ''}`}
-        onClick={() => setOpen(o => !o)}
-        id={`htv-subject-${subject.id}`}
-      >
-        <span className="htv-subject-folder-icon" style={{ color: subject.color }}>
-          {open ? <FolderOpen size={20} /> : <Folder size={20} />}
-        </span>
-
-        <div className="htv-subject-info">
-          <span className="htv-subject-name">{subject.name}</span>
-          <span className="htv-subject-sub">
-            {chapters.length} chapter{chapters.length !== 1 ? 's' : ''} ·{' '}
-            {doneTasks}/{totalTasks} tasks done
+      <div className="htv-subject-header-wrap">
+        <button
+          className={`htv-subject-header ${open ? 'htv-subject-open' : ''}`}
+          onClick={() => setOpen(o => !o)}
+          id={`htv-subject-${subject.id}`}
+        >
+          <span className="htv-subject-folder-icon" style={{ color: subject.color }}>
+            {open ? <FolderOpen size={20} /> : <Folder size={20} />}
           </span>
-        </div>
 
-        <div className="htv-subject-progress">
-          <div className="htv-subject-bar-wrap">
-            <div
-              className="htv-subject-bar-fill"
-              style={{ width: `${pct}%`, background: subject.color }}
-            />
+          <div className="htv-subject-info">
+            <span className="htv-subject-name">{subject.name}</span>
+            <span className="htv-subject-sub">
+              {chapters.length} chapter{chapters.length !== 1 ? 's' : ''} ·{' '}
+              {doneTasks}/{totalTasks} tasks done
+            </span>
           </div>
-          <span className="htv-subject-pct" style={{ color: subject.color }}>{pct}%</span>
-        </div>
 
-        <span className="htv-subject-chevron">
-          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </span>
-      </button>
+          <div className="htv-subject-progress">
+            <div className="htv-subject-bar-wrap">
+              <div
+                className="htv-subject-bar-fill"
+                style={{ width: `${pct}%`, background: subject.color }}
+              />
+            </div>
+            <span className="htv-subject-pct" style={{ color: subject.color }}>{pct}%</span>
+          </div>
+
+          {isAdmin && subject.is_hidden && (
+            <span className="htv-hidden-badge" title="Hidden from users">
+              <EyeOff size={14} />
+            </span>
+          )}
+
+          <span className="htv-subject-chevron">
+            {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </span>
+        </button>
+        {isAdmin && onHideSubject && (
+          <button
+            className="htv-hide-btn"
+            onClick={(e) => { e.stopPropagation(); onHideSubject(subject); }}
+            title={subject.is_hidden ? 'Unhide subject' : 'Hide from users'}
+            id={`htv-hide-subject-${subject.id}`}
+          >
+            {subject.is_hidden ? <Eye size={16} /> : <EyeOff size={16} />}
+          </button>
+        )}
+      </div>
 
       {open && (
         <div className="htv-subject-body">
@@ -518,6 +559,7 @@ function SubjectFolder({
                 onUpdated={onUpdated}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onHideChapter={onHideChapter}
               />
             ))
           ) : (
@@ -543,6 +585,8 @@ export default function HierarchyTaskView({
   onUpdated,
   onEdit,
   onDelete,
+  onHideSubject,
+  onHideChapter,
 }) {
   // Build lookup maps from flat arrays (computed once, memoised)
   const chaptersBySubject = useMemo(() => {
@@ -589,6 +633,8 @@ export default function HierarchyTaskView({
           onUpdated={onUpdated}
           onEdit={onEdit}
           onDelete={onDelete}
+          onHideSubject={onHideSubject}
+          onHideChapter={onHideChapter}
         />
       ))}
     </div>

@@ -271,6 +271,14 @@ export default function NotesView() {
     } catch { toast.error('Failed to rename folder'); }
   }, []);
 
+  const handleToggleHide = useCallback(async (folder) => {
+    try {
+      const updated = await updateFolder(folder.id, { is_hidden: !folder.is_hidden });
+      setFolders((prev) => prev.map((f) => f.id === folder.id ? updated : f));
+      toast.success(updated.is_hidden ? 'Folder hidden from users' : 'Folder is now visible');
+    } catch { toast.error('Failed to update folder visibility'); }
+  }, []);
+
   const handleDeleteFolder = useCallback((folderId) => {
     setConfirmDialog({
       title: 'Delete Folder',
@@ -511,12 +519,12 @@ export default function NotesView() {
                 >
                   <FileText size={17} />
                 </button>
-                {folders.map((f) => (
+                {folders.filter((f) => isAdmin || !f.is_hidden).map((f) => (
                   <button
                     key={f.id}
                     className={`notes-nav-icon-btn ${selectedFolderId === f.id ? 'active' : ''}`}
                     onClick={() => setSelectedFolderId(f.id)}
-                    title={f.name}
+                    title={f.is_hidden ? `${f.name} (hidden)` : f.name}
                   >
                     <Folder size={17} />
                   </button>
@@ -571,6 +579,7 @@ export default function NotesView() {
                   onDeleteNote={handleDeleteNote}
                   onTogglePin={handleTogglePin}
                   onToggleArchive={handleToggleArchive}
+                  onToggleHide={handleToggleHide}
                 />
               </div>
             </div>
