@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import TaskForm from './TaskForm';
 import HierarchyTaskView from './HierarchyTaskView';
 import ConfirmDialog from '../common/ConfirmDialog';
@@ -26,6 +26,8 @@ export default function TaskList({ onAddTask, showFormProp, onFormClose, editTas
   const [editTask, setEditTask] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [folderDeleteTarget, setFolderDeleteTarget] = useState(null); // { type: 'subject'|'chapter', item }
+  const [folderDeleting, setFolderDeleting] = useState(false);
 
   // ── Load hierarchy skeleton on mount / refresh ────────────────────────────
   const loadHierarchy = useCallback(async () => {
@@ -119,6 +121,77 @@ export default function TaskList({ onAddTask, showFormProp, onFormClose, editTas
     }
   }
 
+  // ── Reorder Subject / Chapter ────────────────────────────────────────────
+  const reorderTimer = useRef(null);
+
+  function handleReorderSubjects(ordered) {
+    // Optimistic: hierarchy state is already updated inside HierarchyTaskView
+    clearTimeout(reorderTimer.current);
+    reorderTimer.current = setTimeout(async () => {
+      try {
+        await Promise.all(
+          ordered.map((s, i) => supabase.from('subjects').update({ sort_order: i }).eq('id', s.id))
+        );
+      } catch {
+        toast.error('Failed to save subject order');
+      }
+    }, 600);
+  }
+
+  function handleReorderChapters(ordered) {
+    clearTimeout(reorderTimer.current);
+    reorderTimer.current = setTimeout(async () => {
+      try {
+        await Promise.all(
+          ordered.map((c, i) => supabase.from('chapters').update({ sort_order: i }).eq('id', c.id))
+        );
+      } catch {
+        toast.error('Failed to save chapter order');
+      }
+    }, 600);
+  }
+
+  // ── Delete Subject / Chapter ──────────────────────────────────────────────
+  function handleDeleteSubject(subject) {
+    setFolderDeleteTarget({ type: 'subject', item: subject });
+  }
+
+  function handleDeleteChapter(chapter) {
+    setFolderDeleteTarget({ type: 'chapter', item: chapter });
+  }
+
+  async function confirmFolderDelete() {
+    if (!folderDeleteTarget) return;
+    const { type, item } = folderDeleteTarget;
+    setFolderDeleting(true);
+    try {
+      if (type === 'subject') {
+        const { error } = await supabase.from('subjects').delete().eq('id', item.id);
+        if (error) throw error;
+        setHierarchy(prev => ({
+          ...prev,
+          subjects: prev.subjects.filter(s => s.id !== item.id),
+          chapters: prev.chapters.filter(c => c.subject_id !== item.id),
+        }));
+        toast.success(`Subject "${item.name}" deleted`);
+      } else {
+        const { error } = await supabase.from('chapters').delete().eq('id', item.id);
+        if (error) throw error;
+        setHierarchy(prev => ({
+          ...prev,
+          chapters: prev.chapters.filter(c => c.id !== item.id),
+        }));
+        toast.success(`Chapter "${item.name}" deleted`);
+      }
+      fetchHierarchyMeta().then(setHierarchy).catch(() => {});
+    } catch {
+      toast.error(`Failed to delete ${type}`);
+    } finally {
+      setFolderDeleting(false);
+      setFolderDeleteTarget(null);
+    }
+  }
+
   // ── Hide/Unhide handlers ──────────────────────────────────────────────────
   async function handleHideSubject(subject) {
     try {
@@ -208,6 +281,10 @@ export default function TaskList({ onAddTask, showFormProp, onFormClose, editTas
           onDelete={setDeleteTarget}
           onHideSubject={isAdmin ? handleHideSubject : undefined}
           onHideChapter={isAdmin ? handleHideChapter : undefined}
+          onDeleteSubject={isAdmin ? handleDeleteSubject : undefined}
+          onDeleteChapter={isAdmin ? handleDeleteChapter : undefined}
+          onReorderSubjects={isAdmin ? handleReorderSubjects : undefined}
+          onReorderChapters={isAdmin ? handleReorderChapters : undefined}
         />
       )}
 
@@ -226,6 +303,19 @@ export default function TaskList({ onAddTask, showFormProp, onFormClose, editTas
         title="Delete Task"
         message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
         loading={deleting}
+      />
+
+      <ConfirmDialog
+        isOpen={!!folderDeleteTarget}
+        onClose={() => setFolderDeleteTarget(null)}
+        onConfirm={confirmFolderDelete}
+        title={folderDeleteTarget?.type === 'subject' ? 'Delete Subject' : 'Delete Chapter'}
+        message={
+          folderDeleteTarget?.type === 'subject'
+            ? `Delete subject "${folderDeleteTarget?.item?.name}"? This will also delete all its chapters, topics and tasks permanently.`
+            : `Delete chapter "${folderDeleteTarget?.item?.name}"? All topics and tasks inside will be permanently deleted.`
+        }
+        loading={folderDeleting}
       />
     </div>
   );

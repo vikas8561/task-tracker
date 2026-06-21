@@ -347,7 +347,8 @@ function ChapterFolder({
   topicTaskCount, chapterTaskCount,
   loadedChapters, onLoadChapter,
   onUpdated, onEdit, onDelete,
-  onHideChapter,
+  onHideChapter, onDeleteChapter,
+  dragHandleProps, isDragOver,
 }) {
   const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
@@ -383,8 +384,13 @@ function ChapterFolder({
   }, [chapterEntry, isLoaded]);
 
   return (
-    <div className={`htv-chapter ${chapter.is_hidden ? 'htv-hidden-item' : ''}`}>
+    <div className={`htv-chapter ${chapter.is_hidden ? 'htv-hidden-item' : ''} ${isDragOver ? 'htv-chapter-drag-over' : ''}`}>
       <div className="htv-chapter-header-wrap">
+        {isAdmin && dragHandleProps && (
+          <span className="htv-folder-drag-handle" {...dragHandleProps} title="Drag to reorder">
+            <GripVertical size={14} />
+          </span>
+        )}
         <button
           className={`htv-chapter-header ${open ? 'htv-chapter-open' : ''}`}
           onClick={handleToggle}
@@ -422,6 +428,16 @@ function ChapterFolder({
             id={`htv-hide-chapter-${chapter.id}`}
           >
             {chapter.is_hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+          </button>
+        )}
+        {isAdmin && onDeleteChapter && (
+          <button
+            className="htv-hide-btn htv-delete-folder-btn"
+            onClick={(e) => { e.stopPropagation(); onDeleteChapter(chapter); }}
+            title="Delete chapter"
+            id={`htv-del-chapter-${chapter.id}`}
+          >
+            <Trash2 size={14} />
           </button>
         )}
       </div>
@@ -467,9 +483,49 @@ function SubjectFolder({
   loadedChapters, onLoadChapter,
   onUpdated, onEdit, onDelete,
   onHideSubject, onHideChapter,
+  onDeleteSubject, onDeleteChapter,
+  onReorderChapters,
+  dragHandleProps, isDragOver,
 }) {
   const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
+  const [localChapters, setLocalChapters] = useState(chapters);
+  const dragSrc = useRef(null);
+  const [chapterDragOverId, setChapterDragOverId] = useState(null);
+
+  // Sync chapters prop to local state
+  useEffect(() => {
+    const incomingIds = chapters.map(c => c.id).join(',');
+    setLocalChapters(prev => {
+      const prevIds = prev.map(c => c.id).join(',');
+      if (prevIds !== incomingIds) return chapters;
+      const lookup = Object.fromEntries(chapters.map(c => [c.id, c]));
+      return prev.map(c => lookup[c.id] ?? c);
+    });
+  }, [chapters]);
+
+  /* Chapter drag handlers */
+  function handleChapterDragStart(chapter) { dragSrc.current = chapter.id; }
+  function handleChapterDragOver(e, chapter) {
+    e.preventDefault();
+    if (dragSrc.current && dragSrc.current !== chapter.id) setChapterDragOverId(chapter.id);
+  }
+  function handleChapterDrop(e, targetChapter) {
+    e.preventDefault();
+    if (!dragSrc.current || dragSrc.current === targetChapter.id) return;
+    setLocalChapters(prev => {
+      const srcIdx = prev.findIndex(c => c.id === dragSrc.current);
+      const tgtIdx = prev.findIndex(c => c.id === targetChapter.id);
+      const reordered = [...prev];
+      const [moved] = reordered.splice(srcIdx, 1);
+      reordered.splice(tgtIdx, 0, moved);
+      onReorderChapters?.(reordered);
+      return reordered;
+    });
+    dragSrc.current = null;
+    setChapterDragOverId(null);
+  }
+  function handleChapterDragEnd() { dragSrc.current = null; setChapterDragOverId(null); }
 
   // Mix loaded task counts with metadata counts for unloaded chapters
   const { totalTasks, doneTasks } = useMemo(() => {
@@ -490,10 +546,15 @@ function SubjectFolder({
   const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className={`htv-subject ${subject.is_hidden ? 'htv-hidden-item' : ''}`} style={{ '--subject-color': subject.color }}>
+    <div className={`htv-subject ${subject.is_hidden ? 'htv-hidden-item' : ''} ${isDragOver ? 'htv-subject-drag-over' : ''}`} style={{ '--subject-color': subject.color }}>
       <div className="htv-subject-accent" style={{ background: subject.color }} />
 
       <div className="htv-subject-header-wrap">
+        {isAdmin && dragHandleProps && (
+          <span className="htv-folder-drag-handle htv-subject-drag-handle" {...dragHandleProps} title="Drag to reorder">
+            <GripVertical size={16} />
+          </span>
+        )}
         <button
           className={`htv-subject-header ${open ? 'htv-subject-open' : ''}`}
           onClick={() => setOpen(o => !o)}
@@ -541,12 +602,22 @@ function SubjectFolder({
             {subject.is_hidden ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
         )}
+        {isAdmin && onDeleteSubject && (
+          <button
+            className="htv-hide-btn htv-delete-folder-btn"
+            onClick={(e) => { e.stopPropagation(); onDeleteSubject(subject); }}
+            title="Delete subject"
+            id={`htv-del-subject-${subject.id}`}
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
       </div>
 
       {open && (
         <div className="htv-subject-body">
-          {chapters.length > 0 ? (
-            chapters.map(chapter => (
+          {localChapters.length > 0 ? (
+            localChapters.map(chapter => (
               <ChapterFolder
                 key={chapter.id}
                 chapter={chapter}
@@ -560,6 +631,15 @@ function SubjectFolder({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onHideChapter={onHideChapter}
+                onDeleteChapter={onDeleteChapter}
+                isDragOver={chapterDragOverId === chapter.id}
+                dragHandleProps={isAdmin ? {
+                  draggable: true,
+                  onDragStart: () => handleChapterDragStart(chapter),
+                  onDragOver: (e) => handleChapterDragOver(e, chapter),
+                  onDrop: (e) => handleChapterDrop(e, chapter),
+                  onDragEnd: handleChapterDragEnd,
+                } : undefined}
               />
             ))
           ) : (
@@ -587,7 +667,52 @@ export default function HierarchyTaskView({
   onDelete,
   onHideSubject,
   onHideChapter,
+  onDeleteSubject,
+  onDeleteChapter,
+  onReorderSubjects,
+  onReorderChapters,
 }) {
+  const { isAdmin } = useAuth();
+  const [localSubjects, setLocalSubjects] = useState(subjects);
+  const subjectDragSrc = useRef(null);
+  const [subjectDragOverId, setSubjectDragOverId] = useState(null);
+
+  // Sync subjects prop → local state (preserve drag order if IDs unchanged)
+  useEffect(() => {
+    const incomingIds = subjects.map(s => s.id).join(',');
+    setLocalSubjects(prev => {
+      const prevIds = prev.map(s => s.id).join(',');
+      if (prevIds !== incomingIds) return subjects;
+      const lookup = Object.fromEntries(subjects.map(s => [s.id, s]));
+      return prev.map(s => lookup[s.id] ?? s);
+    });
+  }, [subjects]);
+
+  /* Subject drag handlers */
+  function handleSubjectDragStart(subject) { subjectDragSrc.current = subject.id; }
+  function handleSubjectDragOver(e, subject) {
+    e.preventDefault();
+    if (subjectDragSrc.current && subjectDragSrc.current !== subject.id) {
+      setSubjectDragOverId(subject.id);
+    }
+  }
+  function handleSubjectDrop(e, targetSubject) {
+    e.preventDefault();
+    if (!subjectDragSrc.current || subjectDragSrc.current === targetSubject.id) return;
+    setLocalSubjects(prev => {
+      const srcIdx = prev.findIndex(s => s.id === subjectDragSrc.current);
+      const tgtIdx = prev.findIndex(s => s.id === targetSubject.id);
+      const reordered = [...prev];
+      const [moved] = reordered.splice(srcIdx, 1);
+      reordered.splice(tgtIdx, 0, moved);
+      onReorderSubjects?.(reordered);
+      return reordered;
+    });
+    subjectDragSrc.current = null;
+    setSubjectDragOverId(null);
+  }
+  function handleSubjectDragEnd() { subjectDragSrc.current = null; setSubjectDragOverId(null); }
+
   // Build lookup maps from flat arrays (computed once, memoised)
   const chaptersBySubject = useMemo(() => {
     const map = {};
@@ -607,7 +732,7 @@ export default function HierarchyTaskView({
     return map;
   }, [topics]);
 
-  if (!subjects.length) {
+  if (!localSubjects.length) {
     return (
       <div className="htv-empty">
         <Folder size={48} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
@@ -620,7 +745,7 @@ export default function HierarchyTaskView({
 
   return (
     <div className="htv-root">
-      {subjects.map(subject => (
+      {localSubjects.map(subject => (
         <SubjectFolder
           key={subject.id}
           subject={subject}
@@ -635,6 +760,17 @@ export default function HierarchyTaskView({
           onDelete={onDelete}
           onHideSubject={onHideSubject}
           onHideChapter={onHideChapter}
+          onDeleteSubject={onDeleteSubject}
+          onDeleteChapter={onDeleteChapter}
+          onReorderChapters={isAdmin ? onReorderChapters : undefined}
+          isDragOver={subjectDragOverId === subject.id}
+          dragHandleProps={isAdmin ? {
+            draggable: true,
+            onDragStart: () => handleSubjectDragStart(subject),
+            onDragOver: (e) => handleSubjectDragOver(e, subject),
+            onDrop: (e) => handleSubjectDrop(e, subject),
+            onDragEnd: handleSubjectDragEnd,
+          } : undefined}
         />
       ))}
     </div>

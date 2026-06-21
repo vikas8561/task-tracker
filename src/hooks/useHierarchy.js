@@ -107,6 +107,28 @@ function buildCountMaps(rows) {
 }
 
 export async function fetchHierarchyMeta() {
+  // Helper: run a query, fall back to created_at-only if sort_order column missing
+  async function queryWithSortFallback(table, limit) {
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .order('sort_order', { ascending: true, nullsFirst: true })
+      .order('created_at', { ascending: true })
+      .limit(limit);
+
+    // 400 or 42703 = sort_order column doesn't exist yet — retry without it
+    if (error && (error.status === 400 || error.code === '42703')) {
+      const fallback = await supabase
+        .from(table)
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(limit);
+      return fallback;
+    }
+
+    return { data, error };
+  }
+
   // Run hierarchy skeleton queries in parallel with the count fetch
   const [
     { data: subjectsRaw, error: sErr },
@@ -114,17 +136,8 @@ export async function fetchHierarchyMeta() {
     { data: topicsRaw,   error: tErr },
     rpcRows,
   ] = await Promise.all([
-    supabase
-      .from('subjects')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .limit(1000),
-
-    supabase
-      .from('chapters')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .limit(5000),
+    queryWithSortFallback('subjects', 1000),
+    queryWithSortFallback('chapters', 5000),
 
     supabase
       .from('topics')

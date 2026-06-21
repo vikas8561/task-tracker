@@ -2322,6 +2322,52 @@ input[type="search"]::-webkit-search-results-decoration {
   color: #ffa000;
 }
 
+/* Delete folder button — danger red variant of hide btn */
+.htv-delete-folder-btn:hover {
+  background: var(--danger-bg, rgba(255, 71, 87, 0.12)) !important;
+  color: var(--danger, #ff4757) !important;
+  border-color: rgba(255, 71, 87, 0.3) !important;
+}
+
+/* Drag handle (GripVertical) */
+.htv-folder-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: grab;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+  padding: 0 2px;
+}
+
+.htv-chapter-header-wrap:hover .htv-folder-drag-handle,
+.htv-subject-header-wrap:hover .htv-folder-drag-handle {
+  opacity: 0.6;
+}
+
+.htv-folder-drag-handle:hover {
+  opacity: 1 !important;
+  color: var(--text-secondary);
+}
+
+.htv-folder-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Drag-over highlight */
+.htv-chapter-drag-over {
+  box-shadow: 0 -3px 0 0 var(--accent-2, #ffa000) !important;
+  border-color: var(--accent-2, #ffa000) !important;
+}
+
+.htv-subject-drag-over {
+  box-shadow: 0 -3px 0 0 var(--subject-color, var(--accent-1)) !important;
+  border-color: var(--subject-color, var(--accent-1)) !important;
+  transform: scale(1.005);
+}
 
 /* Chapter (Level 2) */
 .htv-chapter {
