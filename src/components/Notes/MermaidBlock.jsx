@@ -38,7 +38,7 @@ async function loadMermaid() {
         plotColorPalette: '#ff8a00, #da1b60, #ff9f43, #f43f5e',
       },
     },
-    flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+    flowchart: { useMaxWidth: true, htmlLabels: false, curve: 'basis', nodeSpacing: 60, rankSpacing: 60 },
     mindmap: { useMaxWidth: true },
     securityLevel: 'loose',
   });
@@ -63,6 +63,9 @@ export default function MermaidBlock({ code }) {
       try {
         const mermaid = await loadMermaid();
         const id = `mermaid-${++renderCount}`;
+        if (document.fonts) {
+          await document.fonts.ready;
+        }
         const { svg: rendered } = await mermaid.render(id, code.trim());
         if (!cancelled) {
           setSvg(makeSvgResponsive(themeMermaidSvg(rendered)));
