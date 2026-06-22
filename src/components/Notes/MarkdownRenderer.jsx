@@ -7,7 +7,6 @@ import remarkToc from 'remark-toc';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSlug from 'rehype-slug';
-import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeRaw from 'rehype-raw';
 import { Link } from 'react-router-dom';
 import MermaidBlock from './MermaidBlock';
@@ -239,7 +238,6 @@ const rehypePlugins = [
   rehypeKatex,
   [rehypeHighlight, { detect: true, ignoreMissing: true }],
   rehypeSlug,
-  [rehypeAutolinkHeadings, { behavior: 'wrap', properties: { className: ['heading-anchor'] } }],
 ];
 
 export default function MarkdownRenderer({ content = '', onLinkClick }) {
